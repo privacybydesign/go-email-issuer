@@ -1,0 +1,21 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/.trunk/*actions/": true,
+        "**/.trunk/*logs/": true,
+        "**/.trunk/*notifications/": true,
+        "**/.trunk/*out/": true,
+        "**/.trunk/*plugins/": true,
+        "[!b]*/**": true,
+        "b[!a]*/**": true,
+        "ba[!c]*/**": true,
+        "bac[!k]*/**": true,
+        "back[!e]*/**": true,
+        "backe[!n]*/**": true,
+        "backen[!d]*/**": true
+    }
+}
