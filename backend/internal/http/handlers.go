@@ -23,12 +23,11 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ttlMin := a.cfg.App.TTL
-	maxAge := time.Duration(ttlMin) * time.Minute
+	ttl := a.cfg.App.TTL
 	secret := []byte(a.cfg.App.Secret)
 
 	// verify: payload is the email, created is when token was issued
-	email, created, err := core.ParseToken(tok, maxAge, time.Now(), secret)
+	email, created, err := core.ParseToken(tok, ttl, time.Now(), secret)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_or_expired")
 		return
@@ -51,7 +50,7 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		"email":    email,
 		"yivi-jwt": jwt,
 		"created":  created.Unix(),
-		"expires":  created.Add(maxAge).Unix(),
+		"expires":  created.Add(ttl).Unix(),
 	})
 
 }
