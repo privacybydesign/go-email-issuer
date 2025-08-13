@@ -59,7 +59,7 @@ func Routes() http.Handler {
 	})
 
 	// ---------------------  SEND EMAIL -------------------------------------------------
-	mux.HandleFunc("POST /api/send-verification", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /api/send-email", func(w http.ResponseWriter, r *http.Request) {
 		type input struct {
 			Email string `json:"email"`
 		}
@@ -82,21 +82,23 @@ func Routes() http.Handler {
 		}
 		verifyURL := fmt.Sprintf("%s/verify-email/%s", strings.TrimRight(baseURL, "/"), tok)
 
-		// render HTML body
-		body, err := mail.RenderVerifyEmail(verifyURL)
+		// render email template and prepare the email
+		message, err := mail.PrepareEmail(in.Email, cfg.TEMPLATE_PATH, verifyURL, &cfg)
+
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "template_error")
+			writeError(w, http.StatusInternalServerError, "email_template_error")
+			return
+		}
+		// send the email
+		err = mail.SendEmail(message, &cfg)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "email_send_error")
 			return
 		}
 
-		fmt.Println("=== EMAIL ===")
-		fmt.Println("To:", in.Email)
-		fmt.Println("Subject: Verify your email")
-		fmt.Println("Body:\n", body)
-		fmt.Println("=============")
-
 		writeJSON(w, http.StatusAccepted, map[string]any{
 			"verifyURL": verifyURL,
+			"message":   "email_sent",
 		})
 
 	})
