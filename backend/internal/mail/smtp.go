@@ -16,7 +16,7 @@ type Email struct {
 	Body    string
 }
 
-func PrepareEmail(recipient string, templatePath string, link string, cfg *config.Config) (*gomail.Message, error) {
+func PrepareEmail(recipient string, templatePath string, link string, cfg *config.MailConfig) (*gomail.Message, error) {
 
 	// Parse the email template
 	tmpl, err := template.ParseFiles(templatePath)
@@ -31,18 +31,18 @@ func PrepareEmail(recipient string, templatePath string, link string, cfg *confi
 
 	// Create a new message
 	message := gomail.NewMessage()
-	message.SetHeader("From", cfg.SMTP_FROM)
+	message.SetHeader("From", cfg.From)
 	message.SetHeader("To", recipient)
-	message.SetHeader("Subject", cfg.EMAIL_SUBJECT)
+	message.SetHeader("Subject", cfg.Subject)
 	message.SetBody("text/html", buf.String())
 
 	return message, nil
 }
 
-func SendEmail(message *gomail.Message, cfg *config.Config) error {
+func SendEmail(message *gomail.Message, cfg *config.MailConfig) error {
 
 	// Set up the SMTP dialer
-	dialer := gomail.NewDialer(cfg.SMTP_HOST, cfg.SMTP_PORT, cfg.SMTP_USER, cfg.SMTP_PASSWORD)
+	dialer := gomail.NewDialer(cfg.Host, cfg.Port, cfg.User, cfg.Password)
 
 	// Send the email
 	if err := dialer.DialAndSend(message); err != nil {
