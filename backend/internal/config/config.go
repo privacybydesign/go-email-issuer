@@ -11,16 +11,34 @@ import (
 )
 
 type Config struct {
-	App  AppConfig
-	Mail MailConfig
-	Yivi YiviConfig
+	App           AppConfig
+	Mail          MailConfig
+	Yivi          YiviConfig
+	RedisSentinel RedisSentinelConfig
+	Redis         RedisConfig
+}
+type RedisConfig struct {
+	Host      string `json:"host"`
+	Port      int    `json:"port"`
+	Password  string `json:"password"`
+	Namespace string `json:"namespace"`
+}
+
+type RedisSentinelConfig struct {
+	SentinelHost     string `json:"sentinel_host"`
+	SentinelPort     int    `json:"sentinel_port"`
+	Password         string `json:"password"`
+	MasterName       string `json:"master_name"`
+	SentinelUsername string `json:"sentinel_username"`
+	Namespace        string `json:"namespace"`
 }
 
 type AppConfig struct {
-	Addr    string
-	BaseURL string
-	Secret  string
-	TTL     time.Duration
+	Addr        string
+	BaseURL     string
+	Secret      string
+	TTL         time.Duration
+	StorageType string
 }
 
 type MailConfig struct {
@@ -45,10 +63,11 @@ type YiviConfig struct {
 func Load() (*Config, error) {
 	cfg := &Config{
 		App: AppConfig{
-			Addr:    getEnv("ADDR", ":8080"),
-			BaseURL: getEnv("BASE_URL", "http://localhost:8080"),
-			Secret:  getEnv("SECRET", "changeme"),
-			TTL:     mustParseDuration(getEnv("TTLDUR", "15m")),
+			Addr:        getEnv("ADDR", ":8080"),
+			BaseURL:     getEnv("BASE_URL", "http://localhost:8080"),
+			Secret:      getEnv("SECRET", "changeme"),
+			TTL:         mustParseDuration(getEnv("TTLDUR", "15m")),
+			StorageType: getEnv("STORAGE_TYPE", "inmemory"),
 		},
 		Mail: MailConfig{
 			Host:       getEnv("SMTP_HOST", "your.smtp.host"),
@@ -59,7 +78,7 @@ func Load() (*Config, error) {
 			SenderName: getEnv("EMAIL_SENDER", "Yivi Portal"),
 			Subject:    getEnv("EMAIL_SUBJECT", "Verify your email"),
 			Template:   getEnv("TEMPLATE_PATH", "./internal/mail/templates/verify_email.html"),
-			UseTLS:     mustParseBool(getEnv("SMTP_USE_TLS", "true")),
+			UseTLS:     mustParseBool(getEnv("SMTP_USE_TLS", "false")),
 		},
 		Yivi: YiviConfig{
 			PrivateKeyPath: getEnv("PRIVATE_KEY_PATH", "./internal/issue/keys/private_key.pem"),

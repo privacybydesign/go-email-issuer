@@ -5,6 +5,7 @@ import (
 	"backend/internal/issue"
 	"backend/internal/mail"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -89,9 +90,34 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// rate limit for sending emails
+	if a.limiter != nil {
+		ip := clientIP(r)
+		allow, _ := a.limiter.Allow(ip, in.Email)
+		if !allow {
+			writeError(w, http.StatusTooManyRequests, "rate_limited")
+			return
+		}
+	}
+
 	writeJSON(w, http.StatusAccepted, map[string]any{
 		"verifyURL": verifyURL,
 		"message":   "email_sent",
 	})
 
+}
+
+func clientIP(r *http.Request) string {
+	if xf := r.Header.Get("X-Forwarded-For"); xf != "" {
+		parts := strings.Split(xf, ",")
+		return strings.TrimSpace(parts[0])
+	}
+	if cf := r.Header.Get("CF-Connecting-IP"); cf != "" {
+		return cf
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err == nil {
+		return host
+	}
+	return r.RemoteAddr
 }

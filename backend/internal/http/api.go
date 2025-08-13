@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"backend/internal/config"
+	"backend/internal/core"
 	"encoding/json"
 	"errors"
 	"io"
@@ -9,29 +10,25 @@ import (
 )
 
 type API struct {
-	cfg *config.Config
-	mux *http.ServeMux
+	cfg     *config.Config
+	limiter *core.TotalRateLimiter
 }
 
-func New(cfg *config.Config) *API {
-	a := &API{
-		cfg: cfg,
-		mux: http.NewServeMux(),
-	}
-	return a
+func New(cfg *config.Config, limiter *core.TotalRateLimiter) *API {
+	return &API{cfg: cfg, limiter: limiter}
 }
 
 // Routes returns app's router
 
 func (a *API) Routes() http.Handler {
 
-	a.mux.HandleFunc("GET /healthz", a.handleHealthCheck)
+	http.HandleFunc("GET /healthz", a.handleHealthCheck)
 
-	a.mux.HandleFunc("GET /verify-email/", a.handleVerifyEmail)
+	http.HandleFunc("GET /verify-email/", a.handleVerifyEmail)
 
-	a.mux.HandleFunc("POST /api/send-email", a.handleSendEmail)
+	http.HandleFunc("POST /send-email", a.handleSendEmail)
 
-	return a.mux
+	return http.DefaultServeMux
 
 }
 
