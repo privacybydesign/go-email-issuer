@@ -50,8 +50,6 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"status":          "success",
-		"email":           email,
 		"jwt":             jwt,
 		"irma_server_url": a.cfg.JWT.IRMAServerURL,
 		"expires":         created.Add(ttl).Unix(),
