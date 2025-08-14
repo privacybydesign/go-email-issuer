@@ -3,3 +3,5 @@
 .vscode/*
 config.json
 frontend/node_modules/*
+frontend/build/*
+backend/local-secrets/*
