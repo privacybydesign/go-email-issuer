@@ -24,9 +24,9 @@ func (a *API) Routes() http.Handler {
 
 	http.HandleFunc("GET /healthz", a.handleHealthCheck)
 
-	http.HandleFunc("GET /verify-email/", a.handleVerifyEmail)
+	http.HandleFunc("GET /verify/", a.handleVerifyEmail)
 
-	http.HandleFunc("POST /send-email", a.handleSendEmail)
+	http.HandleFunc("POST /send", a.handleSendEmail)
 
 	return http.DefaultServeMux
 
