@@ -18,7 +18,7 @@ i18n
           index_explanation: "Add your email address in your Yivi app.",
           index_multiple_numbers:
             "Do you want to add multiple email addresses? Then follow these steps for each email address you want to add.",
-          email: "Email address",
+          email_address: "Email address",
           index_start: "Start verification",
           index_email_placeholder: "email@example.com",
           index_email_not_valid: "The entered email address is not valid.",
@@ -37,6 +37,8 @@ i18n
             "Sending the email fails. Most likely this is problem in the Yivi system. Please contact Yivi if this happens more often.",
           error_ratelimit:
             "You have requested to many times. Please try again after {{time}}.",
+          error_link_expired:
+            "The verification link has expired. Please start the process again.",
           error_cannot_validate_token:
             "The code cannot be verified. Is there a typo?",
           error_captcha_failed: "Captcha verification failed.",
@@ -49,9 +51,10 @@ i18n
           steps: "Take the following steps:",
           step_1: "Open the email sent by Yivi.",
           step_2: "Follow the link in the email.",
-          step_3: "You will be redirected back to your Yivi app.",
-          not_mobile:
-            "Are you not viewing this page on your mobile? Then enter the verification code from the email below.",
+          step_3: "You will be redirected back to this page.",
+          step_4:
+            "Scan the QR code in your Yivi app. On mobile, you can just open the Yivi app to continue.",
+          step_5: "Complete the steps on your app to add the email address.",
           verification_code: "Verification code",
           sending_email: "Email is being sent...",
           email_sent: "Email has been sent.",
@@ -94,6 +97,8 @@ i18n
             "De email kan niet worden verzonden. Dit is waarschijnlijk een probleem in Yivi. Neem contact op met Yivi als dit vaker voorkomt.",
           error_ratelimit:
             "U heeft te vaak een verzoek gedaan. Probeer het opnieuw na {{time}}.",
+          error_link_expired:
+            "De verificatielink is verlopen. Start het proces opnieuw.",
           error_cannot_validate_token:
             "De code kon niet worden geverifieerd. Zit er geen typfout in?",
           error_captcha_failed: "Captcha verificatie mislukt.",
@@ -106,9 +111,11 @@ i18n
           steps: "Doorloop de volgende stappen:",
           step_1: "Open het email-bericht afkomstig van Yivi.",
           step_2: "Kies de link in het email-bericht.",
-          step_3: "Je wordt teruggestuurd naar je Yivi-app.",
-          not_mobile:
-            "Bekijk je deze pagina niet op je mobiel? Vul hieronder de verificatiecode uit het email-bericht in.",
+          step_3: "Je wordt teruggeleid naar deze pagina.",
+          step_4:
+            "Scan de QR-code in je Yivi-app. Op mobiel kan je de Yivi-app openen om door te gaan.",
+          step_5:
+            "Voltooi de stappen in je app om het emailadres toe te voegen.",
           verification_code: "Verificatiecode",
           sending_email: "Email wordt verstuurd...",
           email_sent: "Email is verstuurd.",

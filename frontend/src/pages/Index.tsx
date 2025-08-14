@@ -51,8 +51,13 @@ export default function IndexPage() {
           <div className="sms-form">
             <p>{t("index_explanation")}</p>
             <p>{t("index_multiple_numbers")}</p>
-            <label htmlFor="bank-select">{t("email_address")}</label>
-            <input value={email} onChange={onChange} autoFocus />
+            <label htmlFor="email-input">{t("email_address")}</label>
+            <input
+              id="email-input"
+              value={email}
+              onChange={onChange}
+              autoFocus
+            />
             <p>
               {showError && (
                 <div className="warning">{t("index_email_not_valid")}</div>

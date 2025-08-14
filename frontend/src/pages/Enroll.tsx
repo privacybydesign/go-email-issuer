@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 type VerifyResponse = {
   jwt: string;
   irma_server_url: string;
+  expires: number;
 };
 
 export default function EnrollPage() {
@@ -19,27 +20,33 @@ export default function EnrollPage() {
   const [token, setToken] = useState("");
 
   useEffect(() => {
-    setMessage(t("sms_sent"));
+    setMessage(t("email_sent"));
   }, [email]);
 
   // user clicks the link in the email to verify and start the issuance
-  const VerifyAndStartIssuance = async (email: string, token: string) => {
+  const VerifyAndStartIssuance = async (token: string) => {
     try {
       // send email and token to verify endpoint to see if the token is valid for this email
-      const response = await fetch("/verify-email", {
+      const response = await fetch("/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: email,
-          yiviJWT: token,
+          token: token,
         }),
       });
 
       if (response.ok) {
         // Start enrollment process
         const res: VerifyResponse = await response.json();
+        const expiry = new Date(res.expires * 1000);
+        setMessage(
+          `The verification link expires in ${Math.floor(
+            (expiry.getTime() - Date.now()) / 1000 / 60
+          )} minutes`
+        );
+
         import("@privacybydesign/yivi-frontend").then((yivi) => {
           const issuance = yivi.newPopup({
             language: i18n.language,
@@ -65,9 +72,9 @@ export default function EnrollPage() {
             })
             .catch((e: string) => {
               if (e === "Aborted") {
-                setErrorMessage(t("phone_add_cancel"));
+                setErrorMessage(t("email_add_cancel"));
               } else {
-                setErrorMessage(t("phone_add_error"));
+                setErrorMessage(t("email_add_error"));
               }
             });
         });
@@ -78,33 +85,29 @@ export default function EnrollPage() {
     }
   };
 
-  // user types the verification code
-  const enroll = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setErrorMessage(undefined);
-
-    if (!token || token.length !== 6 || !email) {
-      navigate(`/${i18n.language}/error`);
-      return;
-    }
-
-    await VerifyAndStartIssuance(email, token);
-  };
-
-  // if the user has a deeplink in the SMS we verify and start the issuance
   useEffect(() => {
     const hash = window.location.hash;
-    const match = hash.match(/^#!verify:(\+\d+):([0-9A-Za-z]{6})$/);
-    if (!match) {
-      return;
+    const token = hash.replace("#verify:", "");
+
+    if (hash) {
+      const match = hash.match(/^#verify:([^:]+@[^\s:]+):(.+)$/);
+      if (!match) {
+        navigate(`/${i18n.language}/error`);
+        return;
+      }
+
+      const tokenTime = match[2] ? parseInt(match[2]) : 0;
+      if (tokenTime < Date.now() - 5 * 60 * 1000) {
+        setErrorMessage(t("error_link_expired"));
+      }
+
+      VerifyAndStartIssuance(token);
     }
-    const [, linkEmail, linkToken] = match;
-    VerifyAndStartIssuance(linkEmail, linkToken);
-  }, [navigate, setEmail, t]);
+  }, [navigate, t]);
 
   return (
     <>
-      <form id="container" onSubmit={enroll}>
+      <div id="container">
         <header>
           <h1>{t("index_header")}</h1>
         </header>
@@ -139,25 +142,9 @@ export default function EnrollPage() {
                 <li>{t("step_1")}</li>
                 <li>{t("step_2")}</li>
                 <li>{t("step_3")}</li>
+                <li>{t("step_4")}</li>
+                <li>{t("step_5")}</li>
               </ol>
-              <p>{t("not_mobile")}</p>
-              <label htmlFor="submit-token">{t("verification_code")}</label>
-              <input
-                type="text"
-                required
-                className="form-control verification-code-input"
-                value={token}
-                pattern="[0-9A-Za-z]{6}"
-                style={{ textTransform: "uppercase" }}
-                onChange={(e) => setToken(e.target.value.toUpperCase())}
-                autoFocus
-              />
-
-              <button
-                className="hidden"
-                id="submit-token"
-                type="submit"
-              ></button>
             </div>
           </div>
         </main>
@@ -166,10 +153,9 @@ export default function EnrollPage() {
             <Link to={`/${i18n.language}/validate`} id="back-button">
               {t("back")}
             </Link>
-            <button id="submit-button">{t("verify")}</button>
           </div>
         </footer>
-      </form>
+      </div>
     </>
   );
 }

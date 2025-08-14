@@ -1,15 +1,21 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { useEffect } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useParams,
+} from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { AppProvider } from "./AppContext";
 
-import IndexPage from './pages/Index';
-import ValidatePage from './pages/Validate';
-import EnrollPage from './pages/Enroll';
-import ErrorPage from './pages/Error';
-import DonePage from './pages/Done';
+import IndexPage from "./pages/Index";
+import ValidatePage from "./pages/Validate";
+import EnrollPage from "./pages/Enroll";
+import ErrorPage from "./pages/Error";
+import DonePage from "./pages/Done";
 
-import './i18n';
+import "./i18n";
 
 // Wrapper that sets the language based on the URL
 function LanguageRouter() {

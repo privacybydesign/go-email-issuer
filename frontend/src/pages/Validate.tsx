@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../AppContext";
 import { useState } from "react";
 import Turnstile from "react-turnstile";
-import parseEmail from "./Index";
 
 export default function ValidatePage() {
   const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
@@ -30,11 +29,11 @@ export default function ValidatePage() {
       },
       body: JSON.stringify({
         email: email,
-        // language: i18n.language,
+        language: i18n.language,
         // captcha: captcha,
       }),
     });
-    // Navigate to the validate page with react router.
+
     if (response.ok) {
       navigate(`/${i18n.language}/enroll`);
     } else {
