@@ -34,11 +34,12 @@ type RedisSentinelConfig struct {
 }
 
 type AppConfig struct {
-	Addr        string       `json:"addr"`
-	BaseURL     string       `json:"base_url"`
-	Secret      string       `json:"secret"`
-	TTL         JSONDuration `json:"ttl"`
-	StorageType string       `json:"storage_type"`
+	Addr            string       `json:"addr"`
+	BaseURL         string       `json:"base_url"`
+	FrontendBaseURL string       `json:"frontend_base_url"`
+	Secret          string       `json:"secret"`
+	TTL             JSONDuration `json:"ttl"`
+	StorageType     string       `json:"storage_type"`
 }
 
 type MailConfig struct {
@@ -54,9 +55,11 @@ type MailConfig struct {
 }
 
 type JWTConfig struct {
+	IRMAServerURL  string `json:"irma_server_url"`
 	PrivateKeyPath string `json:"private_key_path"`
 	IssuerID       string `json:"issuer_id"`
 	CredentialType string `json:"credential_type"`
+	Credential     string `json:"full_credential"`
 	Attribute      string `json:"attribute"`
 }
 

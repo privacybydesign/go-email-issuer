@@ -24,7 +24,7 @@ func (a *API) Routes() http.Handler {
 
 	http.HandleFunc("GET /healthz", a.handleHealthCheck)
 
-	http.HandleFunc("GET /verify/", a.handleVerifyEmail)
+	http.HandleFunc("POST /verify", a.handleVerifyEmail)
 
 	http.HandleFunc("POST /send", a.handleSendEmail)
 

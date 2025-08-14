@@ -19,7 +19,7 @@
   },
   "JWT": {
     "private_key_path": "./internal/issue/keys/private_key.pem",
-    "issuer_id": "pbdf",
+    "issuer_id": "email_issuer",
     "credential_type": "email",
     "attribute": "email"
   },

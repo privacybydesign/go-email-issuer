@@ -8,16 +8,11 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
 func main() {
 
 	// --------------------- LOAD CONFIG --------------------------
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, continuing with defaults...")
-	}
 
 	cfg, err := config.LoadFromFile("config.json")
 	if err != nil {
