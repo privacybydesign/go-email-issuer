@@ -18,8 +18,12 @@ func (a *API) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 
-	tok := r.URL.Path[len("/verify-email/"):]
-	if tok == "" {
+	// token is passed in the body as JSON from the frontend
+	var req struct {
+		Token string `json:"token"`
+	}
+	err := decodeJSON(w, r, &req)
+	if err != nil || req.Token == "" {
 		writeError(w, http.StatusBadRequest, "token_required")
 		return
 	}
@@ -27,14 +31,13 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	ttl := time.Duration(a.cfg.App.TTL)
 	secret := []byte(a.cfg.App.Secret)
 
-	// verify: payload is the email, created is when token was issued
-	email, created, err := core.ParseToken(tok, ttl, time.Now(), secret)
+	email, created, err := core.ParseToken(req.Token, ttl, secret)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_or_expired")
 		return
 	}
 
-	jwtCreator, err := issue.NewIrmaJwtCreator(a.cfg.JWT.PrivateKeyPath, a.cfg.JWT.IssuerID, a.cfg.JWT.CredentialType, a.cfg.JWT.Attribute)
+	jwtCreator, err := issue.NewIrmaJwtCreator(a.cfg.JWT.PrivateKeyPath, a.cfg.JWT.IssuerID, a.cfg.JWT.Credential, a.cfg.JWT.Attribute)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "jwt_creator_error")
 		return
@@ -47,18 +50,19 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"status":   "verified",
-		"email":    email,
-		"yivi-jwt": jwt,
-		"created":  created.Unix(),
-		"expires":  created.Add(ttl).Unix(),
+		"status":          "success",
+		"email":           email,
+		"jwt":             jwt,
+		"irma_server_url": a.cfg.JWT.IRMAServerURL,
+		"expires":         created.Add(ttl).Unix(),
 	})
 
 }
 
 func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 	type input struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
+		Language string `json:"language"`
 	}
 	var in input
 	if err := decodeJSON(w, r, &in); err != nil || in.Email == "" {
@@ -66,7 +70,7 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	baseURL := a.cfg.App.BaseURL
+	frontendBaseURL := a.cfg.App.FrontendBaseURL + "/" + in.Language + "/enroll/"
 	secret := []byte(a.cfg.App.Secret)
 
 	// build token
@@ -75,7 +79,7 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "token_error")
 		return
 	}
-	verifyURL := fmt.Sprintf("%s/verify-email/%s", strings.TrimRight(baseURL, "/"), tok)
+	verifyURL := fmt.Sprintf("%s/#verify:%s", strings.TrimRight(frontendBaseURL, "/"), tok)
 
 	// render email template and prepare the email
 	message, err := mail.PrepareEmail(in.Email, a.cfg.Mail.Template, verifyURL, &a.cfg.Mail)
@@ -100,9 +104,8 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	writeJSON(w, http.StatusAccepted, map[string]any{
-		"verifyURL": verifyURL,
-		"message":   "email_sent",
+	writeJSON(w, http.StatusOK, map[string]any{
+		"message": "email_sent",
 	})
 
 }
