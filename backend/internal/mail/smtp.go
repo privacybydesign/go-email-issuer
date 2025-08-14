@@ -16,14 +16,23 @@ type Email struct {
 	Body    string
 }
 
-func PrepareEmail(recipient string, templatePath string, link string, cfg *config.MailConfig) (*gomail.Message, error) {
+func PrepareEmail(recipient string, link string, cfg *config.MailConfig, lang string) (*gomail.Message, error) {
 
 	// Parse the email template
-	tmpl, err := template.ParseFiles(templatePath)
+	tmpl, err := template.ParseFiles(cfg.TemplateDir + "email_" + lang + ".html")
 	if err != nil {
 		return nil, fmt.Errorf("parsing template: %w", err)
 	}
 
+	// Prepare the email subject based on the language
+	var subject string
+	if lang == "nl" {
+		subject = cfg.Subject.NL
+	} else {
+		subject = cfg.Subject.EN
+	}
+
+	// Execute the template with the link
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, link); err != nil {
 		return nil, fmt.Errorf("executing template: %w", err)
@@ -33,7 +42,7 @@ func PrepareEmail(recipient string, templatePath string, link string, cfg *confi
 	message := gomail.NewMessage()
 	message.SetHeader("From", cfg.From)
 	message.SetHeader("To", recipient)
-	message.SetHeader("Subject", cfg.Subject)
+	message.SetHeader("Subject", subject)
 	message.SetBody("text/html", buf.String())
 
 	return message, nil
@@ -49,6 +58,6 @@ func SendEmail(message *gomail.Message, cfg *config.MailConfig) error {
 		fmt.Println("Error:", err)
 		return err
 	}
-	fmt.Println("Email sent successfully to", message.GetHeader("To"))
+	fmt.Println("Email sent successfully")
 	return nil
 }

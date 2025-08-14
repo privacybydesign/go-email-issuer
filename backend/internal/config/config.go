@@ -49,9 +49,12 @@ type MailConfig struct {
 	Port       int    `json:"mail_port"`
 	From       string `json:"mail_from"`
 	SenderName string `json:"mail_sender_name"`
-	Subject    string `json:"mail_subject"`
-	Template   string `json:"mail_template"`
-	UseTLS     bool   `json:"mail_use_tls"`
+	Subject    struct {
+		EN string `json:"en"`
+		NL string `json:"nl"`
+	} `json:"mail_subject"`
+	TemplateDir string `json:"mail_template_dir"`
+	UseTLS      bool   `json:"mail_use_tls"`
 }
 
 type JWTConfig struct {
@@ -103,9 +106,9 @@ func validate(cfg *Config) error {
 	if _, err := mail.ParseAddress(cfg.Mail.From); err != nil {
 		return fmt.Errorf("SMTP_FROM invalid: %w", err)
 	}
-	if cfg.Mail.Template != "" {
-		if _, err := os.Stat(cfg.Mail.Template); err != nil {
-			return fmt.Errorf("TEMPLATE_PATH not found (%s): %w", cfg.Mail.Template, err)
+	if cfg.Mail.TemplateDir != "" {
+		if _, err := os.Stat(cfg.Mail.TemplateDir); err != nil {
+			return fmt.Errorf("TEMPLATE_PATH not found (%s): %w", cfg.Mail.TemplateDir, err)
 		}
 	}
 

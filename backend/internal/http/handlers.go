@@ -80,7 +80,7 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 	verifyURL := fmt.Sprintf("%s/#verify:%s", strings.TrimRight(frontendBaseURL, "/"), tok)
 
 	// render email template and prepare the email
-	message, err := mail.PrepareEmail(in.Email, a.cfg.Mail.Template, verifyURL, &a.cfg.Mail)
+	message, err := mail.PrepareEmail(in.Email, verifyURL, &a.cfg.Mail, in.Language)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "email_template_error")
 		return
