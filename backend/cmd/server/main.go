@@ -19,7 +19,7 @@ func main() {
 		log.Println("No .env file found, continuing with defaults...")
 	}
 
-	cfg, err := config.Load()
+	cfg, err := config.LoadFromFile("config.json")
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}

@@ -1,0 +1,40 @@
+{
+  "App": {
+    "addr": ":8080",
+    "base_url": "http://localhost:8080",
+    "secret": "changeme1", 
+    "ttl": "15m",
+    "storage_type": "inmemory" 
+  },
+  "Mail": {
+    "mail_host": "your.smtp.host",
+    "mail_user": "user",
+    "mail_password": "password",
+    "mail_port": 587,
+    "mail_from": "noreply@staging.yivi.app",
+    "mail_sender_name": "Yivi Portal",
+    "mail_subject": "Verify your email",
+    "mail_template": "./internal/mail/templates/verify_email.html",
+    "mail_use_tls": false
+  },
+  "JWT": {
+    "private_key_path": "./internal/issue/keys/private_key.pem",
+    "issuer_id": "pbdf",
+    "credential_type": "email",
+    "attribute": "email"
+  },
+  "Redis": {
+    "host": "localhost",
+    "port": 6379,
+    "password": "password",
+    "namespace": "yivi"
+  },
+  "RedisSentinel": {
+    "sentinel_host": "localhost",
+    "sentinel_port": 26379,
+    "password": "password",
+    "master_name": "master",
+    "sentinel_username": "username",
+    "namespace": "yivi"
+  }
+}

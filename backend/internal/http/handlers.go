@@ -24,7 +24,7 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ttl := a.cfg.App.TTL
+	ttl := time.Duration(a.cfg.App.TTL)
 	secret := []byte(a.cfg.App.Secret)
 
 	// verify: payload is the email, created is when token was issued
@@ -34,7 +34,7 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwtCreator, err := issue.NewIrmaJwtCreator(a.cfg.Yivi.PrivateKeyPath, a.cfg.Yivi.IssuerID, a.cfg.Yivi.CredentialType, a.cfg.Yivi.Attribute)
+	jwtCreator, err := issue.NewIrmaJwtCreator(a.cfg.JWT.PrivateKeyPath, a.cfg.JWT.IssuerID, a.cfg.JWT.CredentialType, a.cfg.JWT.Attribute)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "jwt_creator_error")
 		return

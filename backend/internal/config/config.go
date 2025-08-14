@@ -1,19 +1,19 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/mail"
 	"os"
 	"path/filepath"
-	"strconv"
 	"time"
 )
 
 type Config struct {
 	App           AppConfig
 	Mail          MailConfig
-	Yivi          YiviConfig
+	JWT           JWTConfig
 	RedisSentinel RedisSentinelConfig
 	Redis         RedisConfig
 }
@@ -34,101 +34,52 @@ type RedisSentinelConfig struct {
 }
 
 type AppConfig struct {
-	Addr        string
-	BaseURL     string
-	Secret      string
-	TTL         time.Duration
-	StorageType string
+	Addr        string       `json:"addr"`
+	BaseURL     string       `json:"base_url"`
+	Secret      string       `json:"secret"`
+	TTL         JSONDuration `json:"ttl"`
+	StorageType string       `json:"storage_type"`
 }
 
 type MailConfig struct {
-	Host       string
-	User       string
-	Password   string
-	Port       int
-	From       string
-	SenderName string
-	Subject    string
-	Template   string
-	UseTLS     bool
+	Host       string `json:"mail_host"`
+	User       string `json:"mail_user"`
+	Password   string `json:"mail_password"`
+	Port       int    `json:"mail_port"`
+	From       string `json:"mail_from"`
+	SenderName string `json:"mail_sender_name"`
+	Subject    string `json:"mail_subject"`
+	Template   string `json:"mail_template"`
+	UseTLS     bool   `json:"mail_use_tls"`
 }
 
-type YiviConfig struct {
-	PrivateKeyPath string
-	IssuerID       string
-	CredentialType string
-	Attribute      string
+type JWTConfig struct {
+	PrivateKeyPath string `json:"private_key_path"`
+	IssuerID       string `json:"issuer_id"`
+	CredentialType string `json:"credential_type"`
+	Attribute      string `json:"attribute"`
 }
 
-func Load() (*Config, error) {
-	cfg := &Config{
-		App: AppConfig{
-			Addr:        getEnv("ADDR", ":8080"),
-			BaseURL:     getEnv("BASE_URL", "http://localhost:8080"),
-			Secret:      getEnv("SECRET", "changeme"),
-			TTL:         mustParseDuration(getEnv("TTLDUR", "15m")),
-			StorageType: getEnv("STORAGE_TYPE", "inmemory"),
-		},
-		Mail: MailConfig{
-			Host:       getEnv("SMTP_HOST", "your.smtp.host"),
-			User:       getEnv("SMTP_USER", "user"),
-			Password:   getEnv("SMTP_PASSWORD", "password"),
-			Port:       mustParseInt(getEnv("SMTP_PORT", "587")),
-			From:       getEnv("SMTP_FROM", "noreply@staging.yivi.app"),
-			SenderName: getEnv("EMAIL_SENDER", "Yivi Portal"),
-			Subject:    getEnv("EMAIL_SUBJECT", "Verify your email"),
-			Template:   getEnv("TEMPLATE_PATH", "./internal/mail/templates/verify_email.html"),
-			UseTLS:     mustParseBool(getEnv("SMTP_USE_TLS", "false")),
-		},
-		Yivi: YiviConfig{
-			PrivateKeyPath: getEnv("PRIVATE_KEY_PATH", "./internal/issue/keys/private_key.pem"),
-			IssuerID:       getEnv("ISSUER_ID", "pbdf"),
-			CredentialType: getEnv("CREDENTIAL_TYPE", "email"),
-			Attribute:      getEnv("ATTRIBUTE", "email"),
-		},
-	}
-
-	if err := validate(cfg); err != nil {
+func LoadFromFile(path string) (*Config, error) {
+	file, err := os.Open(path)
+	if err != nil {
 		return nil, err
 	}
-	return cfg, nil
+	defer file.Close()
+
+	var cfg Config
+	if err := json.NewDecoder(file).Decode(&cfg); err != nil {
+		return nil, err
+	}
+
+	if err := validate(&cfg); err != nil {
+		return nil, err
+	}
+
+	return &cfg, nil
 }
 
 // --- helpers ---
-
-func getEnv(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return def
-}
-
-func mustParseInt(s string) int {
-	i, err := strconv.Atoi(s)
-	if err != nil {
-		panic(fmt.Errorf("invalid int %q: %w", s, err))
-	}
-	return i
-}
-
-func mustParseDuration(s string) time.Duration {
-	d, err := time.ParseDuration(s)
-	if err != nil {
-		panic(fmt.Errorf("invalid duration %q: %w", s, err))
-	}
-	return d
-}
-
-func mustParseBool(s string) bool {
-	switch s {
-	case "1", "t", "T", "true", "TRUE", "True", "yes", "on":
-		return true
-	case "0", "f", "F", "false", "FALSE", "False", "no", "off":
-		return false
-	default:
-		panic(fmt.Errorf("invalid bool %q", s))
-	}
-}
 
 func validate(cfg *Config) error {
 	// App
@@ -136,7 +87,7 @@ func validate(cfg *Config) error {
 		return errors.New("SECRET must be set to a non-default value")
 	}
 	if cfg.App.TTL <= 0 {
-		return fmt.Errorf("TTLDUR must be > 0 (got %s)", cfg.App.TTL)
+		return fmt.Errorf("TTLDUR must be > 0 (got %s)", time.Duration(cfg.App.TTL))
 	}
 
 	// Mail
@@ -155,14 +106,30 @@ func validate(cfg *Config) error {
 		}
 	}
 
-	// Yivi
-	if cfg.Yivi.PrivateKeyPath != "" {
-		if _, err := os.Stat(filepath.Clean(cfg.Yivi.PrivateKeyPath)); err != nil {
+	// Yivi issuance session JWT
+	if cfg.JWT.PrivateKeyPath != "" {
+		if _, err := os.Stat(filepath.Clean(cfg.JWT.PrivateKeyPath)); err != nil {
 			return fmt.Errorf("PRIVATE_KEY_PATH not found: %w", err)
 		}
 	}
-	if cfg.Yivi.IssuerID == "" {
+	if cfg.JWT.IssuerID == "" {
 		return errors.New("ISSUER_ID is required")
 	}
 	return nil
+}
+
+type JSONDuration time.Duration
+
+func (d *JSONDuration) UnmarshalJSON(b []byte) error {
+	// Try string: "15m", "1h30m", etc.
+	var s string
+	if err := json.Unmarshal(b, &s); err == nil {
+		dd, err := time.ParseDuration(s)
+		if err != nil {
+			return fmt.Errorf("invalid duration %q: %w", s, err)
+		}
+		*d = JSONDuration(dd)
+		return nil
+	}
+	return fmt.Errorf("invalid duration: %s", string(b))
 }

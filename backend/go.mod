@@ -15,6 +15,8 @@ require (
 	github.com/bwesterb/go-pow v1.0.0 // indirect
 	github.com/bwesterb/go-xmssmt v1.5.2 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
 	github.com/eknkc/basex v1.0.1 // indirect
 	github.com/fxamacker/cbor v1.5.1 // indirect
@@ -68,5 +70,6 @@ require (
 
 require (
 	github.com/privacybydesign/irmago v0.18.1
+	github.com/redis/go-redis/v9 v9.12.1
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
