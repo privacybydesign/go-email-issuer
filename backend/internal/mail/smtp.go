@@ -24,20 +24,16 @@ func PrepareEmail(recipient string, link string, cfg *config.MailConfig, lang st
 		return nil, fmt.Errorf("parsing template: %w", err)
 	}
 
-	// Prepare the email subject based on the language
-	var subject string
-	if lang == "nl" {
-		subject = cfg.Subject["nl"]
-	} else {
-		subject = cfg.Subject["en"]
-	}
-
 	// Execute the template with the link
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, link); err != nil {
 		return nil, fmt.Errorf("executing template: %w", err)
 	}
 
+	subject, ok := cfg.Subject[lang]
+	if !ok {
+		subject = cfg.Subject["en"]
+	}
 	// Create a new message
 	message := gomail.NewMessage()
 	message.SetHeader("From", cfg.From)

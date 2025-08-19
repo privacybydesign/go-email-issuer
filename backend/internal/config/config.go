@@ -43,18 +43,15 @@ type AppConfig struct {
 }
 
 type MailConfig struct {
-	Host       string `json:"mail_host"`
-	User       string `json:"mail_user"`
-	Password   string `json:"mail_password"`
-	Port       int    `json:"mail_port"`
-	From       string `json:"mail_from"`
-	SenderName string `json:"mail_sender_name"`
-	Subject    struct {
-		EN string `json:"en"`
-		NL string `json:"nl"`
-	} `json:"mail_subject"`
-	TemplateDir string `json:"mail_template_dir"`
-	UseTLS      bool   `json:"mail_use_tls"`
+	Host        string            `json:"mail_host"`
+	User        string            `json:"mail_user"`
+	Password    string            `json:"mail_password"`
+	Port        int               `json:"mail_port"`
+	From        string            `json:"mail_from"`
+	SenderName  string            `json:"mail_sender_name"`
+	Subject     map[string]string `json:"mail_subject"`
+	TemplateDir string            `json:"mail_template_dir"`
+	UseTLS      bool              `json:"mail_use_tls"`
 }
 
 type JWTConfig struct {
