@@ -3,7 +3,7 @@ package main
 import (
 	"backend/internal/config"
 	"backend/internal/core"
-	httpapi "backend/internal/http"
+	api "backend/internal/http"
 	"backend/internal/storage"
 	"flag"
 	"log"
@@ -33,11 +33,11 @@ func main() {
 
 	totalLimiter := buildTotalLimiter(cfg)
 
-	handler := httpapi.New(cfg, totalLimiter).Routes()
+	router := api.NewAPIContext(cfg, totalLimiter).Routes()
 
 	srv := &http.Server{
 		Addr:              cfg.App.Addr,
-		Handler:           handler,
+		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
