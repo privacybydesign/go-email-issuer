@@ -2,7 +2,6 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../AppContext";
 import { useState } from "react";
-import Turnstile from "react-turnstile";
 
 export default function ValidatePage() {
   const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
@@ -22,7 +21,7 @@ export default function ValidatePage() {
       return;
     }
 
-    const response = await fetch("/send", {
+    const response = await fetch("/api/send", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -30,7 +29,6 @@ export default function ValidatePage() {
       body: JSON.stringify({
         email: email,
         language: i18n.language,
-        // captcha: captcha,
       }),
     });
 
@@ -86,10 +84,6 @@ export default function ValidatePage() {
 
             <input type="email" value={email} disabled={true} />
             <p>{t("validate_bot_control")}</p>
-            <Turnstile
-              sitekey={siteKey}
-              onSuccess={(token) => setCaptcha(token || "")}
-            />
           </div>
         </main>
         <footer>
