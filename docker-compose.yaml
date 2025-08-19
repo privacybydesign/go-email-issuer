@@ -1,0 +1,12 @@
+services:
+  go-email-issuer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: go-email-issuer
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./internal/issue/keys/:/internal/issue/keys/
+    restart: unless-stopped
