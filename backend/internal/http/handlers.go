@@ -59,10 +59,9 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ttl := time.Duration(a.cfg.App.TTL)
 	secret := []byte(a.cfg.App.Secret)
 
-	email, created, err := core.ParseToken(req.Token, ttl, secret)
+	email, err := core.ParseToken(req.Token, secret)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_or_expired")
 		return
@@ -83,7 +82,6 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"jwt":             jwt,
 		"irma_server_url": a.cfg.JWT.IRMAServerURL,
-		"expires":         created.Add(ttl).Unix(),
 	})
 
 }
@@ -99,16 +97,17 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	frontendBaseURL := a.cfg.App.FrontendBaseURL + "/" + in.Language + "/enroll/"
 	secret := []byte(a.cfg.App.Secret)
+	expiresAt := time.Now().Add(time.Duration(a.cfg.App.TTL)).Unix()
 
 	// build token
-	tok, err := core.MakeToken(in.Email, time.Now(), secret)
+	tok, err := core.MakeToken(in.Email, time.Now(), secret, expiresAt)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "token_error")
 		return
 	}
-	verifyURL := fmt.Sprintf("%s/#verify:%s", strings.TrimRight(frontendBaseURL, "/"), tok)
+	baseURL := strings.TrimSuffix(a.cfg.App.BaseURL, "/")
+	verifyURL := fmt.Sprintf("%s/%s/enroll#verify:%s", baseURL, in.Language, tok)
 
 	// render email template and prepare the email
 	message, err := mail.PrepareEmail(in.Email, verifyURL, &a.cfg.Mail, in.Language)

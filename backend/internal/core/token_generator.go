@@ -14,50 +14,49 @@ var ErrInvalid = errors.New("invalid_or_tampered")
 var ErrExpired = errors.New("expired")
 
 // Make verification token email:timestamp:signature
-func MakeToken(email string, now time.Time, secret []byte) (string, error) {
+func MakeToken(email string, secret []byte, expiresAt int64) (string, error) {
 	if strings.Contains(email, ":") {
 		return "", errors.New("email_must_not_contain_colon")
 	}
-	ts := strconv.FormatInt(now.Unix(), 10)
-	msg := email + ":" + ts
+	msg := email + ":" + strconv.FormatInt(expiresAt, 10)
 
 	mac := hmac.New(sha256.New, secret)
 	mac.Write([]byte(msg))
-	sig := base64.RawURLEncoding.EncodeToString(mac.Sum(nil)) // ~43 chars
-	token := strings.Join([]string{email, ts, sig}, ":")
+	sig := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+	token := strings.Join([]string{email, strconv.FormatInt(expiresAt, 10), sig}, ":")
 
 	return token, nil
 }
 
 // Parse verifies signature and age, returns email and creation time.
-func ParseToken(tok string, maxAge time.Duration, secret []byte) (email string, created time.Time, err error) {
+func ParseToken(tok string, secret []byte) (email string, err error) {
 
 	parts := strings.Split(tok, ":")
 	// our token is in 3 parts
 	if len(parts) != 3 {
-		return "", time.Time{}, ErrInvalid
+		return "", ErrInvalid
 	}
-	email, tsStr, sigStr := parts[0], parts[1], parts[2]
+	email, expiresAtStr, sigStr := parts[0], parts[1], parts[2]
 
 	// check expected signature vs result of new signature
-	msg := email + ":" + tsStr
+	msg := email + ":" + expiresAtStr
 	mac := hmac.New(sha256.New, secret)
 	mac.Write([]byte(msg))
 	expected := mac.Sum(nil)
 
 	result, err := base64.RawURLEncoding.DecodeString(sigStr)
 	if err != nil || !hmac.Equal(result, expected) {
-		return "", time.Time{}, ErrInvalid
+		return "", ErrInvalid
 	}
 
-	// check if ttl has passed (minutes)
-	sec, err := strconv.ParseInt(tsStr, 10, 64)
+	// check if token is expired
+	expiresAt, err := strconv.ParseInt(expiresAtStr, 10, 64)
 	if err != nil {
-		return "", time.Time{}, ErrInvalid
+		return "", ErrInvalid
 	}
-	created = time.Unix(sec, 0).UTC()
-	if maxAge > 0 && time.Since(created) > maxAge {
-		return "", time.Time{}, ErrExpired
+
+	if expiresAt < time.Now().Unix() {
+		return "", ErrExpired
 	}
-	return email, created, nil
+	return email, nil
 }
