@@ -5,6 +5,7 @@ import (
 	"backend/internal/core"
 	httpapi "backend/internal/http"
 	"backend/internal/storage"
+	"flag"
 	"log"
 	"net/http"
 	"time"
@@ -14,7 +15,16 @@ func main() {
 
 	// --------------------- LOAD CONFIG --------------------------
 
-	cfg, err := config.LoadFromFile("config.json")
+	cfgPath := flag.String("config", "config.json", "Path to the config file")
+	flag.Parse()
+
+	if *cfgPath == "" {
+		log.Fatal("Please provide a config file path using the -config flag")
+	}
+
+	log.Printf("Loading configuration from %s", *cfgPath)
+
+	cfg, err := config.LoadFromFile(*cfgPath)
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
