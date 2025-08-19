@@ -27,7 +27,7 @@ export default function EnrollPage() {
   const VerifyAndStartIssuance = async (token: string) => {
     try {
       // send email and token to verify endpoint to see if the token is valid for this email
-      const response = await fetch("/verify", {
+      const response = await fetch("/api/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
