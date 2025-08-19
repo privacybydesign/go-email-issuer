@@ -101,7 +101,7 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 	expiresAt := time.Now().Add(time.Duration(a.cfg.App.TTL)).Unix()
 
 	// build token
-	tok, err := core.MakeToken(in.Email, time.Now(), secret, expiresAt)
+	tok, err := core.MakeToken(in.Email, secret, expiresAt)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "token_error")
 		return

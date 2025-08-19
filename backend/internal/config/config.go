@@ -106,11 +106,6 @@ func validate(cfg *Config) error {
 	if _, err := mail.ParseAddress(cfg.Mail.From); err != nil {
 		return fmt.Errorf("SMTP_FROM invalid: %w", err)
 	}
-	if cfg.Mail.TemplateDir != "" {
-		if _, err := os.Stat(cfg.Mail.TemplateDir); err != nil {
-			return fmt.Errorf("TEMPLATE_PATH not found (%s): %w", cfg.Mail.TemplateDir, err)
-		}
-	}
 
 	// Yivi issuance session JWT
 	if cfg.JWT.PrivateKeyPath != "" {

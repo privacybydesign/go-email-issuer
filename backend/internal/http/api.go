@@ -26,7 +26,7 @@ func (a *API) Routes() *mux.Router {
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/api/healthz", a.handleHealthCheck).Methods("GET")
+	r.HandleFunc("/api/health", a.handleHealthCheck).Methods("GET")
 	r.HandleFunc("/api/verify", a.handleVerifyEmail).Methods("POST")
 	r.HandleFunc("/api/send", a.handleSendEmail).Methods("POST")
 

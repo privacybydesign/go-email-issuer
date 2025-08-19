@@ -27,9 +27,9 @@ func PrepareEmail(recipient string, link string, cfg *config.MailConfig, lang st
 	// Prepare the email subject based on the language
 	var subject string
 	if lang == "nl" {
-		subject = cfg.Subject.NL
+		subject = cfg.Subject["nl"]
 	} else {
-		subject = cfg.Subject.EN
+		subject = cfg.Subject["en"]
 	}
 
 	// Execute the template with the link
