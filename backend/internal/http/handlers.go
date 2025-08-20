@@ -110,17 +110,19 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 	verifyURL := fmt.Sprintf("%s/%s/enroll#verify:%s", baseURL, in.Language, tok)
 
 	// render email template and prepare the email
-	smtpMailer := mail.NewSmtpMailer(&a.cfg.Mail)
-	message := mail.Email{
-		From:    a.cfg.Mail.From,
-		To:      in.Email,
-		Subject: a.cfg.Mail.Subject[in.Language],
-		Lang:    in.Language,
-		Link:    verifyURL,
+
+	tmplStr, err := mail.RenderHTMLtemplate(a.cfg.Mail.TemplateDir[in.Language], verifyURL)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "template_render_error")
+		return
 	}
 
-	// send the email
-	err = smtpMailer.SendEmail(message)
+	emData := mail.Email{From: a.cfg.Mail.From, To: in.Email,
+		Subject: a.cfg.Mail.Subject[in.Language], Lang: in.Language,
+		Link: verifyURL, Body: tmplStr,
+	}
+
+	err = a.mailer.SendEmail(emData)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "email_send_error")
 		return

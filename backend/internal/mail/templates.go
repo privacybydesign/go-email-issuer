@@ -1,21 +1,35 @@
 package mail
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
+	"bytes"
+	"text/template"
+
+	gomail "gopkg.in/mail.v2"
 )
 
-type VerifyEmailData struct {
-	VerifyURL string
-	Minutes   int
-}
+func RenderHTMLtemplate(dir string, link string) (string, error) {
 
-func RenderVerifyEmail(verifyURL string) (string, error) {
-	path := filepath.Join("internal", "mail", "templates", "verify_email.html")
-	htmlBytes, err := os.ReadFile(path)
+	tmpl, err := template.ParseFiles(dir)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf(string(htmlBytes), verifyURL), nil
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, link)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+
+}
+
+func ComposeEmail(e Email, body string) *gomail.Message {
+	gm := gomail.NewMessage()
+	gm.SetHeader("From", e.From)
+	gm.SetHeader("To", e.To)
+	gm.SetHeader("Subject", e.Subject)
+	gm.SetBody("text/html", body)
+
+	return gm
+
 }

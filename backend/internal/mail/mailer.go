@@ -2,9 +2,7 @@ package mail
 
 import (
 	"backend/internal/config"
-	"bytes"
 	"fmt"
-	"text/template"
 
 	gomail "gopkg.in/mail.v2"
 )
@@ -13,6 +11,7 @@ type Email struct {
 	From    string
 	To      string
 	Subject string
+	Body    string
 	Lang    string
 	Link    string
 }
@@ -33,32 +32,11 @@ func NewSmtpMailer(mcfg *config.MailConfig) *SmtpMailer {
 
 func (sm SmtpMailer) SendEmail(e Email) error {
 
-	// set the subject with fallback
-	subject, ok := sm.mcfg.Subject[e.Lang]
-	if !ok {
-		subject = sm.mcfg.Subject["en"]
-	}
-	// set body to te template with fallback
-	tmpldir, ok := sm.mcfg.TemplateDir[e.Lang]
-	if !ok {
-		tmpldir = sm.mcfg.TemplateDir["en"]
-	}
-	// parse the template with the link
-	tmpl, err := template.ParseFiles(tmpldir)
-	if err != nil {
-		return err
-	}
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, e.Link); err != nil {
-		return nil
-	}
-
-	// set up email message
 	gm := gomail.NewMessage()
 	gm.SetHeader("From", e.From)
 	gm.SetHeader("To", e.To)
-	gm.SetHeader("Subject", subject)
-	gm.SetBody("text/html", buf.String())
+	gm.SetHeader("Subject", e.Subject)
+	gm.SetBody("text/html", e.Body)
 
 	sm.dialer.DialAndSend(gm)
 

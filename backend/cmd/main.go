@@ -4,6 +4,7 @@ import (
 	"backend/internal/config"
 	"backend/internal/core"
 	api "backend/internal/http"
+	"backend/internal/mail"
 	"backend/internal/storage"
 	"flag"
 	"log"
@@ -32,8 +33,9 @@ func main() {
 	// --------------------- SET UP SERVER --------------------------
 
 	totalLimiter := buildTotalLimiter(cfg)
+	SMTPMailer := mail.NewSmtpMailer(&cfg.Mail)
 
-	router := api.NewAPIContext(cfg, totalLimiter).Routes()
+	router := api.NewAPI(cfg, totalLimiter, SMTPMailer).Routes()
 
 	srv := &http.Server{
 		Addr:              cfg.App.Addr,
