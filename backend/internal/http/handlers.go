@@ -91,10 +91,15 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		Email    string `json:"email"`
 		Language string `json:"language"`
 	}
+
 	var in input
 	if err := decodeJSON(w, r, &in); err != nil || in.Email == "" {
 		writeError(w, http.StatusBadRequest, "email_required")
 		return
+	}
+
+	if _, exists := a.cfg.Mail.MailTemplates[in.Language]; !exists {
+		in.Language = "en"
 	}
 
 	secret := []byte(a.cfg.App.Secret)
@@ -111,15 +116,16 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 
 	// render email template and prepare the email
 
-	tmplStr, err := mail.RenderHTMLtemplate(a.cfg.Mail.TemplateDir[in.Language], verifyURL)
+	tmplStr, err := mail.RenderHTMLtemplate(a.cfg.Mail.MailTemplates[in.Language].TemplateDir, verifyURL)
+	fmt.Printf("template_dir: %s\n", a.cfg.Mail.MailTemplates[in.Language].TemplateDir)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "template_render_error")
 		return
 	}
 
 	emData := mail.Email{From: a.cfg.Mail.From, To: in.Email,
-		Subject: a.cfg.Mail.Subject[in.Language], Lang: in.Language,
-		Link: verifyURL, Body: tmplStr,
+		Subject: a.cfg.Mail.MailTemplates[in.Language].Subject,
+		Body:    tmplStr,
 	}
 
 	err = a.mailer.SendEmail(emData)

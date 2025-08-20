@@ -12,8 +12,6 @@ type Email struct {
 	To      string
 	Subject string
 	Body    string
-	Lang    string
-	Link    string
 }
 
 type Mailer interface {
@@ -47,6 +45,6 @@ func (sm SmtpMailer) SendEmail(e Email) error {
 type DummyMailer struct{}
 
 func (dm DummyMailer) SendEmail(e Email) error {
-	fmt.Printf("Sending email to %s with subject '%s' and link '%s'\n", e.To, e.Subject, e.Link)
+	fmt.Printf("Sending email to %s with subject '%s' and body '%s'\n", e.To, e.Subject, e.Body)
 	return nil
 }
