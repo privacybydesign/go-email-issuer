@@ -69,6 +69,7 @@ require (
 )
 
 require (
+	github.com/gorilla/mux v1.8.1
 	github.com/privacybydesign/irmago v0.18.1
 	github.com/redis/go-redis/v9 v9.12.1
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect

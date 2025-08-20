@@ -7,6 +7,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 type API struct {
@@ -14,22 +16,25 @@ type API struct {
 	limiter *core.TotalRateLimiter
 }
 
-func New(cfg *config.Config, limiter *core.TotalRateLimiter) *API {
+func NewAPIContext(cfg *config.Config, limiter *core.TotalRateLimiter) *API {
 	return &API{cfg: cfg, limiter: limiter}
 }
 
 // Routes returns app's router
 
-func (a *API) Routes() http.Handler {
+func (a *API) Routes() *mux.Router {
 
-	http.HandleFunc("GET /healthz", a.handleHealthCheck)
+	r := mux.NewRouter()
 
-	http.HandleFunc("POST /verify", a.handleVerifyEmail)
+	r.HandleFunc("/api/health", a.handleHealthCheck).Methods("GET")
+	r.HandleFunc("/api/verify", a.handleVerifyEmail).Methods("POST")
+	r.HandleFunc("/api/send", a.handleSendEmail).Methods("POST")
 
-	http.HandleFunc("POST /send", a.handleSendEmail)
+	spa := spaHandler{StaticPath: "../frontend/build", IndexPath: "index.html", FileServer: http.FileServer(http.Dir("../frontend/build"))}
 
-	return http.DefaultServeMux
+	r.PathPrefix("/").Handler(spa)
 
+	return r
 }
 
 // --------------------------------- HELPERS -------------------------------------------

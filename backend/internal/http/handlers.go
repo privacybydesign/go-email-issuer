@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -14,6 +16,35 @@ import (
 func (a *API) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("ok"))
+}
+
+type spaHandler struct {
+	StaticPath string
+	IndexPath  string
+	FileServer http.Handler
+}
+
+func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Join internally call path.Clean to prevent directory traversal
+	path := filepath.Join(h.StaticPath, r.URL.Path)
+
+	// check whether a file exists or is a directory at the given path
+	fi, err := os.Stat(path)
+	if os.IsNotExist(err) || fi.IsDir() {
+		// file does not exist or path is a directory, serve index.html
+		http.ServeFile(w, r, filepath.Join(h.StaticPath, h.IndexPath))
+		return
+	}
+
+	if err != nil {
+		// if we got an error (that wasn't that the file doesn't exist) stating the
+		// file, return a 500 internal server error and stop
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// otherwise, use http.FileServer to serve the static file
+	h.FileServer.ServeHTTP(w, r)
 }
 
 func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
@@ -28,10 +59,9 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ttl := time.Duration(a.cfg.App.TTL)
 	secret := []byte(a.cfg.App.Secret)
 
-	email, created, err := core.ParseToken(req.Token, ttl, secret)
+	email, err := core.ParseToken(req.Token, secret)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_or_expired")
 		return
@@ -52,7 +82,6 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"jwt":             jwt,
 		"irma_server_url": a.cfg.JWT.IRMAServerURL,
-		"expires":         created.Add(ttl).Unix(),
 	})
 
 }
@@ -68,19 +97,20 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	frontendBaseURL := a.cfg.App.FrontendBaseURL + "/" + in.Language + "/enroll/"
 	secret := []byte(a.cfg.App.Secret)
+	expiresAt := time.Now().Add(time.Duration(a.cfg.App.TTL)).Unix()
 
 	// build token
-	tok, err := core.MakeToken(in.Email, time.Now(), secret)
+	tok, err := core.MakeToken(in.Email, secret, expiresAt)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "token_error")
 		return
 	}
-	verifyURL := fmt.Sprintf("%s/#verify:%s", strings.TrimRight(frontendBaseURL, "/"), tok)
+	baseURL := strings.TrimSuffix(a.cfg.App.BaseURL, "/")
+	verifyURL := fmt.Sprintf("%s/%s/enroll#verify:%s", baseURL, in.Language, tok)
 
 	// render email template and prepare the email
-	message, err := mail.PrepareEmail(in.Email, a.cfg.Mail.Template, verifyURL, &a.cfg.Mail)
+	message, err := mail.PrepareEmail(in.Email, verifyURL, &a.cfg.Mail, in.Language)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "email_template_error")
 		return

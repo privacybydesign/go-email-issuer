@@ -39,13 +39,6 @@ i18n
             "You have requested to many times. Please try again after {{time}}.",
           error_link_expired:
             "The verification link has expired. Please start the process again.",
-          error_cannot_validate_token:
-            "The code cannot be verified. Is there a typo?",
-          error_captcha_failed: "Captcha verification failed.",
-          error_invalid_captcha:
-            "Captcha verification failed. Please try again.",
-          error_address_malformed:
-            "The email address you entered is not supported by us. You can only add (European) email addresses.",
           verify: "Verify",
           receive_email: "You will receive an email from Yivi.",
           steps: "Take the following steps:",
@@ -99,13 +92,6 @@ i18n
             "U heeft te vaak een verzoek gedaan. Probeer het opnieuw na {{time}}.",
           error_link_expired:
             "De verificatielink is verlopen. Start het proces opnieuw.",
-          error_cannot_validate_token:
-            "De code kon niet worden geverifieerd. Zit er geen typfout in?",
-          error_captcha_failed: "Captcha verificatie mislukt.",
-          error_invalid_captcha:
-            "Captcha verificatie mislukt. Probeer het opnieuw.",
-          error_address_malformed:
-            "Het ingevoerde emailadres wordt niet ondersteund. Je kan alleen (Europese) emailadressen toevoegen.",
           verify: "Verifiëren",
           receive_email: "Je ontvangt een email van Yivi.",
           steps: "Doorloop de volgende stappen:",

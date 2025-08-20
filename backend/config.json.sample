@@ -2,7 +2,7 @@
   "App": {
     "addr": ":8080",
     "base_url": "http://localhost:8080",
-    "secret": "changeme1", 
+    "secret": "changeme", 
     "ttl": "15m",
     "storage_type": "inmemory" 
   },
@@ -13,8 +13,11 @@
     "mail_port": 587,
     "mail_from": "noreply@staging.yivi.app",
     "mail_sender_name": "Yivi Portal",
-    "mail_subject": "Verify your email",
-    "mail_template": "./internal/mail/templates/verify_email.html",
+    "mail_subject": {
+      "en": "Verify your email",
+      "nl": "Verifieer je e-mailadres"
+    }, 
+    "mail_template_dir": "./internal/mail/templates",
     "mail_use_tls": false
   },
   "JWT": {

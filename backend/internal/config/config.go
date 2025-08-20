@@ -43,15 +43,15 @@ type AppConfig struct {
 }
 
 type MailConfig struct {
-	Host       string `json:"mail_host"`
-	User       string `json:"mail_user"`
-	Password   string `json:"mail_password"`
-	Port       int    `json:"mail_port"`
-	From       string `json:"mail_from"`
-	SenderName string `json:"mail_sender_name"`
-	Subject    string `json:"mail_subject"`
-	Template   string `json:"mail_template"`
-	UseTLS     bool   `json:"mail_use_tls"`
+	Host        string            `json:"mail_host"`
+	User        string            `json:"mail_user"`
+	Password    string            `json:"mail_password"`
+	Port        int               `json:"mail_port"`
+	From        string            `json:"mail_from"`
+	SenderName  string            `json:"mail_sender_name"`
+	Subject     map[string]string `json:"mail_subject"`
+	TemplateDir string            `json:"mail_template_dir"`
+	UseTLS      bool              `json:"mail_use_tls"`
 }
 
 type JWTConfig struct {
@@ -102,11 +102,6 @@ func validate(cfg *Config) error {
 	}
 	if _, err := mail.ParseAddress(cfg.Mail.From); err != nil {
 		return fmt.Errorf("SMTP_FROM invalid: %w", err)
-	}
-	if cfg.Mail.Template != "" {
-		if _, err := os.Stat(cfg.Mail.Template); err != nil {
-			return fmt.Errorf("TEMPLATE_PATH not found (%s): %w", cfg.Mail.Template, err)
-		}
 	}
 
 	// Yivi issuance session JWT

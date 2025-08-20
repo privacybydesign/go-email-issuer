@@ -1,12 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
-import { useAppContext } from "../AppContext";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import i18n from "../i18n";
 import { useEffect, useState } from "react";
 type VerifyResponse = {
   jwt: string;
   irma_server_url: string;
-  expires: number;
 };
 
 export default function EnrollPage() {
@@ -16,18 +14,22 @@ export default function EnrollPage() {
   const [errorMessage, setErrorMessage] = useState<string | undefined>(
     undefined
   );
-  const { email, setEmail } = useAppContext();
-  const [token, setToken] = useState("");
+  const hash = window.location.hash;
+  const location = useLocation();
 
   useEffect(() => {
-    setMessage(t("email_sent"));
-  }, [email]);
+    // only show the message if the user came from the validate page
+    if (location.state?.from === "validate" && location.state?.message) {
+      setMessage(t(location.state.message));
 
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
   // user clicks the link in the email to verify and start the issuance
   const VerifyAndStartIssuance = async (token: string) => {
     try {
       // send email and token to verify endpoint to see if the token is valid for this email
-      const response = await fetch("/verify", {
+      const response = await fetch("/api/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -40,12 +42,6 @@ export default function EnrollPage() {
       if (response.ok) {
         // Start enrollment process
         const res: VerifyResponse = await response.json();
-        const expiry = new Date(res.expires * 1000);
-        setMessage(
-          `The verification link expires in ${Math.floor(
-            (expiry.getTime() - Date.now()) / 1000 / 60
-          )} minutes`
-        );
 
         import("@privacybydesign/yivi-frontend").then((yivi) => {
           const issuance = yivi.newPopup({
@@ -66,8 +62,6 @@ export default function EnrollPage() {
             .start()
             .then(() => {
               setMessage(t("email_add_success"));
-              setEmail("");
-              setToken("");
               navigate(`/${i18n.language}/done`);
             })
             .catch((e: string) => {
@@ -86,7 +80,6 @@ export default function EnrollPage() {
   };
 
   useEffect(() => {
-    const hash = window.location.hash;
     const token = hash.replace("#verify:", "");
 
     if (hash) {
@@ -94,11 +87,6 @@ export default function EnrollPage() {
       if (!match) {
         navigate(`/${i18n.language}/error`);
         return;
-      }
-
-      const tokenTime = match[2] ? parseInt(match[2]) : 0;
-      if (tokenTime < Date.now() - 5 * 60 * 1000) {
-        setErrorMessage(t("error_link_expired"));
       }
 
       VerifyAndStartIssuance(token);
@@ -136,23 +124,34 @@ export default function EnrollPage() {
                   </div>
                 </div>
               )}
-              <p>{t("receive_email")}</p>
-              <b>{t("steps")}</b>
-              <ol>
-                <li>{t("step_1")}</li>
-                <li>{t("step_2")}</li>
-                <li>{t("step_3")}</li>
-                <li>{t("step_4")}</li>
-                <li>{t("step_5")}</li>
-              </ol>
+              {!hash && (
+                <>
+                  <p>{t("receive_email")}</p>
+                  <b>{t("steps")}</b>
+                  <ol>
+                    <li>{t("step_1")}</li>
+                    <li>{t("step_2")}</li>
+                    <li>{t("step_3")}</li>
+                    <li>{t("step_4")}</li>
+                    <li>{t("step_5")}</li>
+                  </ol>
+                </>
+              )}
+              {hash && (
+                <>
+                  <p>{t("step_4")}</p>
+                </>
+              )}
             </div>
           </div>
         </main>
         <footer>
           <div className="actions">
-            <Link to={`/${i18n.language}/validate`} id="back-button">
-              {t("back")}
-            </Link>
+            {!hash && (
+              <Link to={`/${i18n.language}/validate`} id="back-button">
+                {t("back")}
+              </Link>
+            )}
           </div>
         </footer>
       </div>

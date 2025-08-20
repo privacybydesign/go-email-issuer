@@ -10,11 +10,11 @@ export default defineConfig(({ mode }) => {
             port: 3000,
             host: "localhost",
             proxy: {
-              "/send": {
+              "/api/send": {
                 target: "http://localhost:8080/",
                 changeOrigin: true,
               },
-              "/verify": {
+              "/api/verify": {
                 target: "http://localhost:8080/",
                 changeOrigin: true,
               },

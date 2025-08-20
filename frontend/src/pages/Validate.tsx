@@ -1,18 +1,15 @@
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../AppContext";
-import { useState } from "react";
-import Turnstile from "react-turnstile";
+import { useEffect, useState } from "react";
 
 export default function ValidatePage() {
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState<string | undefined>(
     undefined
   );
   const { t, i18n } = useTranslation();
   const { email } = useAppContext();
-  const [captcha, setCaptcha] = useState<string>("");
 
   const enroll = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -22,7 +19,7 @@ export default function ValidatePage() {
       return;
     }
 
-    const response = await fetch("/send", {
+    const response = await fetch("/api/send", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -30,12 +27,13 @@ export default function ValidatePage() {
       body: JSON.stringify({
         email: email,
         language: i18n.language,
-        // captcha: captcha,
       }),
     });
 
     if (response.ok) {
-      navigate(`/${i18n.language}/enroll`);
+      navigate(`/${i18n.language}/enroll`, {
+        state: { from: "validate", message: "email_sent" },
+      });
     } else {
       let errorCode = await response.text();
       errorCode = errorCode
@@ -85,11 +83,6 @@ export default function ValidatePage() {
             <p>{t("validate_explanation")}</p>
 
             <input type="email" value={email} disabled={true} />
-            <p>{t("validate_bot_control")}</p>
-            <Turnstile
-              sitekey={siteKey}
-              onSuccess={(token) => setCaptcha(token || "")}
-            />
           </div>
         </main>
         <footer>
@@ -97,9 +90,7 @@ export default function ValidatePage() {
             <Link to={`/${i18n.language}`} id="back-button">
               {t("back")}
             </Link>
-            <button id="submit-button" disabled={!captcha}>
-              {t("confirm")}
-            </button>
+            <button id="submit-button">{t("confirm")}</button>
           </div>
         </footer>
       </form>

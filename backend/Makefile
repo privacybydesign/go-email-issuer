@@ -9,10 +9,10 @@ vet:
 	go vet ./...
 
 build:
-	go build -o bin/app ./cmd/server/main.go
+	go build -o ./bin/server ./cmd/main.go
 
 run: build
-	./bin/app
+	./bin/server
 
 help:
 	@echo "Available targets:"
