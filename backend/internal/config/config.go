@@ -50,7 +50,7 @@ type MailConfig struct {
 	From        string            `json:"mail_from"`
 	SenderName  string            `json:"mail_sender_name"`
 	Subject     map[string]string `json:"mail_subject"`
-	TemplateDir string            `json:"mail_template_dir"`
+	TemplateDir map[string]string `json:"mail_template_dir"`
 	UseTLS      bool              `json:"mail_use_tls"`
 }
 

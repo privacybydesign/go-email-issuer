@@ -17,7 +17,10 @@
       "en": "Verify your email",
       "nl": "Verifieer je e-mailadres"
     }, 
-    "mail_template_dir": "./internal/mail/templates",
+    "mail_template_dir": {
+      "en": "./internal/mail/templates/email_en.html",
+      "nl": "./internal/mail/templates/email_nl.html"
+    },
     "mail_use_tls": false
   },
   "JWT": {
