@@ -1,8 +1,12 @@
 package core
 
 import (
+	"context"
 	"fmt"
+	"sync"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 // ----------- Abstract Rate Limiter Interface -----------
@@ -51,6 +55,101 @@ func (l *TotalRateLimiter) Allow(ip, email string) (allow bool, timeoutRemaining
 		return false, max(timeRemainingIp, timeRemainingEmail)
 	}
 	return true, 0
+}
+
+// Redis rate limiter
+
+type RedisRateLimiter struct {
+	rclient   *redis.Client
+	namespace string
+	ctx       context.Context
+	policy    RateLimitingPolicy
+}
+
+func NewRedisRateLimiter(redis *redis.Client, namespace string, policy RateLimitingPolicy) *RedisRateLimiter {
+	return &RedisRateLimiter{
+		rclient:   redis,
+		ctx:       context.Background(),
+		policy:    policy,
+		namespace: namespace,
+	}
+}
+
+func (r *RedisRateLimiter) Allow(key string) (bool, time.Duration, error) {
+
+	key = fmt.Sprintf("%s:%s", r.namespace, key)
+
+	count, err := r.rclient.Incr(r.ctx, key).Result()
+	if err != nil {
+		fmt.Printf("Redis Incr failed: %v\n", err)
+		return false, 0, err
+	}
+
+	if count == 1 {
+		// First request: set expiry
+		err = r.rclient.Expire(r.ctx, key, r.policy.Window).Err()
+		if err != nil {
+			fmt.Printf("Redis Expire failed: %v\n", err)
+			return false, 0, err
+		}
+	}
+
+	if count >= int64(r.policy.Limit) {
+		timeRemaining, err := r.rclient.TTL(r.ctx, key).Result()
+		if err != nil {
+			return false, 0, err
+		}
+		return false, timeRemaining, nil
+	}
+
+	return true, 0, nil
+}
+
+// Memory rate limiter
+
+type InMemoryRateLimiter struct {
+	memory map[string]RateLimiterEntry
+	mutex  sync.Mutex
+	policy RateLimitingPolicy
+	clock  Clock
+}
+
+func (r *InMemoryRateLimiter) Allow(key string) (allow bool, timeout time.Duration, err error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	entry, exists := r.memory[key]
+
+	if !exists {
+		r.memory[key] = RateLimiterEntry{
+			Count:  0,
+			Expiry: r.clock.GetTime().Add(r.policy.Window),
+		}
+		entry = r.memory[key]
+	}
+
+	entry.Count += 1
+
+	if entry.Count > r.policy.Limit {
+		timeUntilExpiry := entry.Expiry.Sub(r.clock.GetTime())
+
+		if timeUntilExpiry < 0 {
+			entry.Expiry = r.clock.GetTime().Add(r.policy.Window)
+			entry.Count = 0
+			return true, 0, nil
+		}
+		return false, timeUntilExpiry, nil
+	}
+	return true, 0, nil
+
+}
+
+func NewInMemoryRateLimiter(clock Clock, policy RateLimitingPolicy) *InMemoryRateLimiter {
+	return &InMemoryRateLimiter{
+		memory: map[string]RateLimiterEntry{},
+		mutex:  sync.Mutex{},
+		policy: policy,
+		clock:  clock,
+	}
 }
 
 // --------------- HELPER FUNCTIONS -------------------
