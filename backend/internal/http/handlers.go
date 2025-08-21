@@ -91,6 +91,7 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		Email    string `json:"email"`
 		Language string `json:"language"`
 	}
+
 	var in input
 	if err := decodeJSON(w, r, &in); err != nil || in.Email == "" {
 		writeError(w, http.StatusBadRequest, "email_required")
@@ -110,13 +111,24 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 	verifyURL := fmt.Sprintf("%s/%s/enroll#verify:%s", baseURL, in.Language, tok)
 
 	// render email template and prepare the email
-	message, err := mail.PrepareEmail(in.Email, verifyURL, &a.cfg.Mail, in.Language)
+	mailTmpl, ok := a.cfg.Mail.MailTemplates[in.Language]
+	if !ok {
+		mailTmpl = a.cfg.Mail.MailTemplates["en"]
+	}
+
+	tmplStr, err := mail.RenderHTMLtemplate(mailTmpl.TemplateDir, verifyURL)
+
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "email_template_error")
+		writeError(w, http.StatusInternalServerError, "template_render_error")
 		return
 	}
-	// send the email
-	err = mail.SendEmail(message, &a.cfg.Mail)
+
+	emData := mail.Email{From: a.cfg.Mail.From, To: in.Email,
+		Subject: mailTmpl.Subject,
+		Body:    tmplStr,
+	}
+
+	err = a.mailer.SendEmail(emData)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "email_send_error")
 		return

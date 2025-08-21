@@ -3,6 +3,7 @@ package httpapi
 import (
 	"backend/internal/config"
 	"backend/internal/core"
+	"backend/internal/mail"
 	"encoding/json"
 	"errors"
 	"io"
@@ -14,10 +15,11 @@ import (
 type API struct {
 	cfg     *config.Config
 	limiter *core.TotalRateLimiter
+	mailer  mail.Mailer
 }
 
-func NewAPIContext(cfg *config.Config, limiter *core.TotalRateLimiter) *API {
-	return &API{cfg: cfg, limiter: limiter}
+func NewAPI(cfg *config.Config, limiter *core.TotalRateLimiter, mailer mail.Mailer) *API {
+	return &API{cfg: cfg, limiter: limiter, mailer: mailer}
 }
 
 // Routes returns app's router

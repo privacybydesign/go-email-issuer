@@ -1,21 +1,22 @@
 package mail
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
+	"bytes"
+	"text/template"
 )
 
-type VerifyEmailData struct {
-	VerifyURL string
-	Minutes   int
-}
+func RenderHTMLtemplate(dir string, link string) (string, error) {
 
-func RenderVerifyEmail(verifyURL string) (string, error) {
-	path := filepath.Join("internal", "mail", "templates", "verify_email.html")
-	htmlBytes, err := os.ReadFile(path)
+	tmpl, err := template.ParseFiles(dir)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf(string(htmlBytes), verifyURL), nil
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, link)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+
 }

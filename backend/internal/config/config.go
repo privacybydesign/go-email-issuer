@@ -41,17 +41,20 @@ type AppConfig struct {
 	TTL             JSONDuration `json:"ttl"`
 	StorageType     string       `json:"storage_type"`
 }
+type MailTemplate struct {
+	Subject     string `json:"mail_subject"`
+	TemplateDir string `json:"mail_template_dir"`
+}
 
 type MailConfig struct {
-	Host        string            `json:"mail_host"`
-	User        string            `json:"mail_user"`
-	Password    string            `json:"mail_password"`
-	Port        int               `json:"mail_port"`
-	From        string            `json:"mail_from"`
-	SenderName  string            `json:"mail_sender_name"`
-	Subject     map[string]string `json:"mail_subject"`
-	TemplateDir string            `json:"mail_template_dir"`
-	UseTLS      bool              `json:"mail_use_tls"`
+	Host          string                  `json:"mail_host"`
+	User          string                  `json:"mail_user"`
+	Password      string                  `json:"mail_password"`
+	Port          int                     `json:"mail_port"`
+	From          string                  `json:"mail_from"`
+	SenderName    string                  `json:"mail_sender_name"`
+	UseTLS        bool                    `json:"mail_use_tls"`
+	MailTemplates map[string]MailTemplate `json:"mail_templates"`
 }
 
 type JWTConfig struct {

@@ -12,12 +12,17 @@
     "mail_password": "password",
     "mail_port": 587,
     "mail_from": "noreply@staging.yivi.app",
-    "mail_sender_name": "Yivi Portal",
-    "mail_subject": {
-      "en": "Verify your email",
-      "nl": "Verifieer je e-mailadres"
-    }, 
-    "mail_template_dir": "./internal/mail/templates",
+    "mail_sender_name": "Yivi",
+    "mail_templates": {
+      "en" : {
+        "mail_template_dir":"./internal/mail/templates/email_en.html",
+        "mail_subject":"Verify your email"
+      },
+      "nl" : {
+        "mail_template_dir": "./internal/mail/templates/email_nl.html",
+        "mail_subject": "Verifieer je e-mailadres"
+      }
+    },
     "mail_use_tls": false
   },
   "JWT": {
