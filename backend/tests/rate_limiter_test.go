@@ -40,7 +40,6 @@ func TestRateLimiterWithDifferentEmails(t *testing.T) {
 		"test2@email.com",
 		"test3@email.com",
 		"test4@email.com",
-		"test5@email.com",
 	}
 
 	// 5 different emails with the same ip allowed
@@ -52,8 +51,8 @@ func TestRateLimiterWithDifferentEmails(t *testing.T) {
 	}
 
 	// 6th email from the same ip should fail
-	allow, _ := rl.Allow(ip, emails[5])
-	if !allow {
+	allow, _ := rl.Allow(ip, "test5@email.com")
+	if allow {
 		t.Fatal("expected to fail at 6th attempt")
 	}
 
