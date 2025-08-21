@@ -98,10 +98,6 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, exists := a.cfg.Mail.MailTemplates[in.Language]; !exists {
-		in.Language = "en"
-	}
-
 	secret := []byte(a.cfg.App.Secret)
 	expiresAt := time.Now().Add(time.Duration(a.cfg.App.TTL)).Unix()
 
@@ -115,16 +111,20 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 	verifyURL := fmt.Sprintf("%s/%s/enroll#verify:%s", baseURL, in.Language, tok)
 
 	// render email template and prepare the email
+	mailTmpl, ok := a.cfg.Mail.MailTemplates[in.Language]
+	if !ok {
+		mailTmpl = a.cfg.Mail.MailTemplates["en"]
+	}
 
-	tmplStr, err := mail.RenderHTMLtemplate(a.cfg.Mail.MailTemplates[in.Language].TemplateDir, verifyURL)
-	fmt.Printf("template_dir: %s\n", a.cfg.Mail.MailTemplates[in.Language].TemplateDir)
+	tmplStr, err := mail.RenderHTMLtemplate(mailTmpl.TemplateDir, verifyURL)
+
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "template_render_error")
 		return
 	}
 
 	emData := mail.Email{From: a.cfg.Mail.From, To: in.Email,
-		Subject: a.cfg.Mail.MailTemplates[in.Language].Subject,
+		Subject: mailTmpl.Subject,
 		Body:    tmplStr,
 	}
 
