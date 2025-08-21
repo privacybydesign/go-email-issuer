@@ -1,7 +1,6 @@
-package storage
+package core
 
 import (
-	"backend/internal/core"
 	"context"
 	"fmt"
 	"time"
@@ -13,10 +12,10 @@ type RedisRateLimiter struct {
 	rclient   *redis.Client
 	namespace string
 	ctx       context.Context
-	policy    core.RateLimitingPolicy
+	policy    RateLimitingPolicy
 }
 
-func NewRedisRateLimiter(redis *redis.Client, namespace string, policy core.RateLimitingPolicy) *RedisRateLimiter {
+func NewRedisRateLimiter(redis *redis.Client, namespace string, policy RateLimitingPolicy) *RedisRateLimiter {
 	return &RedisRateLimiter{
 		rclient:   redis,
 		ctx:       context.Background(),

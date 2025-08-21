@@ -1,16 +1,15 @@
-package storage
+package core
 
 import (
-	"backend/internal/core"
 	"sync"
 	"time"
 )
 
 type InMemoryRateLimiter struct {
-	memory map[string]*core.RateLimiterEntry
+	memory map[string]RateLimiterEntry
 	mutex  sync.Mutex
-	policy core.RateLimitingPolicy
-	clock  core.Clock
+	policy RateLimitingPolicy
+	clock  Clock
 }
 
 func (r *InMemoryRateLimiter) Allow(key string) (allow bool, timeout time.Duration, err error) {
@@ -19,7 +18,7 @@ func (r *InMemoryRateLimiter) Allow(key string) (allow bool, timeout time.Durati
 	entry, exists := r.memory[key]
 
 	if !exists {
-		r.memory[key] = &core.RateLimiterEntry{
+		r.memory[key] = RateLimiterEntry{
 			Count:  0,
 			Expiry: r.clock.GetTime().Add(r.policy.Window),
 		}
@@ -42,9 +41,9 @@ func (r *InMemoryRateLimiter) Allow(key string) (allow bool, timeout time.Durati
 
 }
 
-func NewInMemoryRateLimiter(clock core.Clock, policy core.RateLimitingPolicy) *InMemoryRateLimiter {
+func NewInMemoryRateLimiter(clock Clock, policy RateLimitingPolicy) *InMemoryRateLimiter {
 	return &InMemoryRateLimiter{
-		memory: map[string]*core.RateLimiterEntry{},
+		memory: map[string]RateLimiterEntry{},
 		mutex:  sync.Mutex{},
 		policy: policy,
 		clock:  clock,

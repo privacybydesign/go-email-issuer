@@ -55,8 +55,8 @@ func buildTotalLimiter(cfg *config.Config) *core.TotalRateLimiter {
 
 	switch cfg.App.StorageType {
 	case "inmemory", "memory":
-		email := storage.NewInMemoryRateLimiter(core.NewSystemClock(), emailPolicy)
-		ip := storage.NewInMemoryRateLimiter(core.NewSystemClock(), ipPolicy)
+		email := core.NewInMemoryRateLimiter(core.NewSystemClock(), emailPolicy)
+		ip := core.NewInMemoryRateLimiter(core.NewSystemClock(), ipPolicy)
 		return core.NewTotalRateLimiter(email, ip)
 
 	case "redis":
@@ -64,8 +64,8 @@ func buildTotalLimiter(cfg *config.Config) *core.TotalRateLimiter {
 		if err != nil {
 			log.Fatalf("Error connecting to Redis: %v", err)
 		}
-		email := storage.NewRedisRateLimiter(rc, cfg.Redis.Namespace, emailPolicy)
-		ip := storage.NewRedisRateLimiter(rc, cfg.Redis.Namespace, ipPolicy)
+		email := core.NewRedisRateLimiter(rc, cfg.Redis.Namespace, emailPolicy)
+		ip := core.NewRedisRateLimiter(rc, cfg.Redis.Namespace, ipPolicy)
 		return core.NewTotalRateLimiter(email, ip)
 
 	default:
