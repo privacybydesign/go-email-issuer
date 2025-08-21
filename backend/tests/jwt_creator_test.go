@@ -3,6 +3,8 @@ package main
 import (
 	"backend/internal/issue"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreatingJwt(t *testing.T) {
@@ -19,11 +21,7 @@ func TestCreatingJwt(t *testing.T) {
 	testEmail := "test@email.com"
 	jwt, err := jwtCreator.CreateJwt(testEmail)
 
-	if err != nil {
-		t.Fatalf("Failed to create the jwt for the given email: %v", err)
-	}
+	require.NoError(t, err, "Failed to create the jwt for the given email")
+	require.NotEmpty(t, jwt, "jwt should not be empty")
 
-	if jwt == "" {
-		t.Fatal("jwt is empty")
-	}
 }
