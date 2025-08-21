@@ -137,8 +137,10 @@ func (r *InMemoryRateLimiter) Allow(key string) (allow bool, timeout time.Durati
 			entry.Count = 0
 			return true, 0, nil
 		}
+		r.memory[key] = entry
 		return false, timeUntilExpiry, nil
 	}
+	r.memory[key] = entry
 	return true, 0, nil
 
 }
