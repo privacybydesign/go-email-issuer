@@ -108,7 +108,7 @@ func (r *RedisRateLimiter) Allow(key string) (bool, time.Duration, error) {
 // Memory rate limiter
 
 type InMemoryRateLimiter struct {
-	memory map[string]RateLimiterEntry
+	memory map[string]*RateLimiterEntry
 	mutex  sync.Mutex
 	policy RateLimitingPolicy
 	clock  Clock
@@ -120,11 +120,11 @@ func (r *InMemoryRateLimiter) Allow(key string) (allow bool, timeout time.Durati
 	entry, exists := r.memory[key]
 
 	if !exists {
-		r.memory[key] = RateLimiterEntry{
+		entry = &RateLimiterEntry{
 			Count:  0,
 			Expiry: r.clock.GetTime().Add(r.policy.Window),
 		}
-		entry = r.memory[key]
+		r.memory[key] = entry
 	}
 
 	entry.Count += 1
@@ -137,17 +137,15 @@ func (r *InMemoryRateLimiter) Allow(key string) (allow bool, timeout time.Durati
 			entry.Count = 0
 			return true, 0, nil
 		}
-		r.memory[key] = entry
 		return false, timeUntilExpiry, nil
 	}
-	r.memory[key] = entry
 	return true, 0, nil
 
 }
 
 func NewInMemoryRateLimiter(clock Clock, policy RateLimitingPolicy) *InMemoryRateLimiter {
 	return &InMemoryRateLimiter{
-		memory: map[string]RateLimiterEntry{},
+		memory: map[string]*RateLimiterEntry{},
 		mutex:  sync.Mutex{},
 		policy: policy,
 		clock:  clock,
