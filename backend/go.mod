@@ -16,6 +16,7 @@ require (
 	github.com/bwesterb/go-xmssmt v1.5.2 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
 	github.com/eknkc/basex v1.0.1 // indirect
@@ -45,6 +46,7 @@ require (
 	github.com/mr-tron/base58 v1.1.3 // indirect
 	github.com/multiformats/go-multihash v0.0.11 // indirect
 	github.com/nightlyone/lockfile v1.0.0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/privacybydesign/gabi v0.0.0-20221212095008-68a086907750 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/sietseringers/go-sse v0.0.0-20200801161811-e2cf2c63ca50 // indirect
@@ -62,6 +64,7 @@ require (
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.2 // indirect
 	gorm.io/driver/postgres v1.5.3 // indirect
 	gorm.io/driver/sqlserver v1.5.2 // indirect
@@ -72,5 +75,6 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/privacybydesign/irmago v0.18.1
 	github.com/redis/go-redis/v9 v9.12.1
+	github.com/stretchr/testify v1.10.0
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
