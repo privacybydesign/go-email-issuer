@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -49,7 +50,10 @@ func writeJSON(w http.ResponseWriter, code int, v any) error {
 }
 
 func writeError(w http.ResponseWriter, code int, msg string) {
-	writeJSON(w, code, map[string]string{"error": msg})
+	err := writeJSON(w, code, map[string]string{"error": msg})
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
