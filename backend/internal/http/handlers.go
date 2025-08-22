@@ -5,6 +5,7 @@ import (
 	"backend/internal/issue"
 	"backend/internal/mail"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -15,7 +16,10 @@ import (
 
 func (a *API) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("ok"))
+	_, err := w.Write([]byte("ok"))
+	if err != nil {
+		log.Printf("error: %s", err)
+	}
 }
 
 type spaHandler struct {
@@ -79,10 +83,13 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
+	jserr := writeJSON(w, http.StatusOK, map[string]any{
 		"jwt":             jwt,
 		"irma_server_url": a.cfg.JWT.IRMAServerURL,
 	})
+	if jserr != nil {
+		log.Printf("error: %s", jserr)
+	}
 
 }
 
@@ -144,9 +151,12 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
+	jserr := writeJSON(w, http.StatusOK, map[string]any{
 		"message": "email_sent",
 	})
+	if jserr != nil {
+		log.Printf("error: %s", jserr)
+	}
 
 }
 
