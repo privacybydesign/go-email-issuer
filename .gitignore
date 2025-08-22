@@ -1,5 +1,4 @@
 .env
-*.pem
 .vscode/*
 config.json
 frontend/node_modules/*
