@@ -45,7 +45,11 @@ func (a *API) Routes() *mux.Router {
 func writeJSON(w http.ResponseWriter, code int, v any) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(code)
-	return json.NewEncoder(w).Encode(v)
+	err := json.NewEncoder(w).Encode(v)
+	if err != nil {
+		return err
+	}
+	return nil
 
 }
 
