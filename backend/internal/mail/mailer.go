@@ -3,6 +3,7 @@ package mail
 import (
 	"backend/internal/config"
 	"fmt"
+	"log"
 
 	gomail "gopkg.in/mail.v2"
 )
@@ -36,7 +37,10 @@ func (sm SmtpMailer) SendEmail(e Email) error {
 	gm.SetHeader("Subject", e.Subject)
 	gm.SetBody("text/html", e.Body)
 
-	sm.dialer.DialAndSend(gm)
+	err := sm.dialer.DialAndSend(gm)
+	if err != nil {
+		log.Printf("error: %s", err)
+	}
 
 	return nil
 
