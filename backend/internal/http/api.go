@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -44,12 +45,19 @@ func (a *API) Routes() *mux.Router {
 func writeJSON(w http.ResponseWriter, code int, v any) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(code)
-	return json.NewEncoder(w).Encode(v)
+	err := json.NewEncoder(w).Encode(v)
+	if err != nil {
+		return err
+	}
+	return nil
 
 }
 
 func writeError(w http.ResponseWriter, code int, msg string) {
-	writeJSON(w, code, map[string]string{"error": msg})
+	err := writeJSON(w, code, map[string]string{"error": msg})
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {

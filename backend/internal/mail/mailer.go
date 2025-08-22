@@ -2,7 +2,7 @@ package mail
 
 import (
 	"backend/internal/config"
-	"fmt"
+	"log"
 
 	gomail "gopkg.in/mail.v2"
 )
@@ -36,7 +36,10 @@ func (sm SmtpMailer) SendEmail(e Email) error {
 	gm.SetHeader("Subject", e.Subject)
 	gm.SetBody("text/html", e.Body)
 
-	sm.dialer.DialAndSend(gm)
+	err := sm.dialer.DialAndSend(gm)
+	if err != nil {
+		log.Printf("error: %s", err)
+	}
 
 	return nil
 
@@ -45,6 +48,6 @@ func (sm SmtpMailer) SendEmail(e Email) error {
 type DummyMailer struct{}
 
 func (dm DummyMailer) SendEmail(e Email) error {
-	fmt.Printf("Sending email to %s with subject '%s' and body '%s'\n", e.To, e.Subject, e.Body)
+	log.Printf("Sending email to %s with subject '%s' and body '%s'\n", e.To, e.Subject, e.Body)
 	return nil
 }

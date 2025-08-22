@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -52,7 +53,7 @@ func (l *TotalRateLimiter) Allow(ip, email string) (allow bool, timeoutRemaining
 	}
 
 	if !allowIp || !allowEmail {
-		return false, max(timeRemainingIp, timeRemainingEmail)
+		return false, maxDuration(timeRemainingIp, timeRemainingEmail)
 	}
 	return true, 0
 }
@@ -81,7 +82,7 @@ func (r *RedisRateLimiter) Allow(key string) (bool, time.Duration, error) {
 
 	count, err := r.rclient.Incr(r.ctx, key).Result()
 	if err != nil {
-		fmt.Printf("Redis Incr failed: %v\n", err)
+		log.Printf("Redis Incr failed: %v\n", err)
 		return false, 0, err
 	}
 
@@ -89,7 +90,7 @@ func (r *RedisRateLimiter) Allow(key string) (bool, time.Duration, error) {
 		// First request: set expiry
 		err = r.rclient.Expire(r.ctx, key, r.policy.Window).Err()
 		if err != nil {
-			fmt.Printf("Redis Expire failed: %v\n", err)
+			log.Printf("Redis Expire failed: %v\n", err)
 			return false, 0, err
 		}
 	}
@@ -159,7 +160,7 @@ type SystemClock struct{}
 func NewSystemClock() *SystemClock        { return &SystemClock{} }
 func (c *SystemClock) GetTime() time.Time { return time.Now() }
 
-func max(a, b time.Duration) time.Duration {
+func maxDuration(a, b time.Duration) time.Duration {
 	if a >= b {
 		return a
 	}
