@@ -80,9 +80,11 @@ func makeSendEmailRequest(t *testing.T, email, language string) *http.Response {
 
 func readResponseBody(t *testing.T, resp *http.Response) map[string]any {
 	t.Helper()
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	require.NoError(t, err)
+	body, readErr := io.ReadAll(resp.Body)
+	require.NoError(t, readErr)
+
+	closeErr := resp.Body.Close()
+	require.NoError(t, closeErr)
 
 	var m map[string]any
 	require.NoError(t, json.Unmarshal(body, &m))
@@ -92,8 +94,6 @@ func readResponseBody(t *testing.T, resp *http.Response) map[string]any {
 func TestHealthCheckEndpoint(t *testing.T) {
 	resp, err := http.Get(testServer.URL + "/api/health")
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	body, err := io.ReadAll(resp.Body)
@@ -115,7 +115,6 @@ func TestVerifyEmailHappyPath(t *testing.T) {
 func TestVerifyEmail_InvalidAndExpired(t *testing.T) {
 	t.Run("malformed", func(t *testing.T) {
 		resp := makeVerifyEmailRequest(t, "not-a-token")
-		defer resp.Body.Close()
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
@@ -123,7 +122,6 @@ func TestVerifyEmail_InvalidAndExpired(t *testing.T) {
 		tok, err := core.MakeToken(testemail, testsecret, time.Now().Add(-time.Hour).Unix())
 		require.NoError(t, err)
 		resp := makeVerifyEmailRequest(t, tok)
-		defer resp.Body.Close()
 		require.True(t, resp.StatusCode == http.StatusBadRequest)
 	})
 }
