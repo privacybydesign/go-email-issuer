@@ -2,9 +2,8 @@ package main
 
 import (
 	"backend/internal/issue"
-	"testing"
-
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestCreatingJwt(t *testing.T) {
