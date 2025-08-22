@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	netmail "net/mail"
 	"os"
 	"path/filepath"
 	"strings"
@@ -102,6 +103,11 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 	var in input
 	if err := decodeJSON(w, r, &in); err != nil || in.Email == "" {
 		writeError(w, http.StatusBadRequest, "email_required")
+		return
+	}
+
+	if _, err := netmail.ParseAddress(in.Email); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_email")
 		return
 	}
 
