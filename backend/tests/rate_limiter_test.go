@@ -21,7 +21,7 @@ func TestRateLimiterWithSameIPandEmail(t *testing.T) {
 		}
 	}
 
-	// 6th should fail
+	// 6th should fail, since IP limit is 5 and Email limit is 10
 	allow, timeout := rl.Allow(ip, email)
 	if allow {
 		t.Fatal("expected to fail at 6th attempt")
@@ -42,7 +42,7 @@ func TestRateLimiterWithDifferentEmails(t *testing.T) {
 		"test4@email.com",
 	}
 
-	// 5 different emails with the same ip allowed
+	// 5 different emails with the same IP allowed
 	for i, email := range emails {
 		allow, _ := rl.Allow(ip, email)
 		if !allow {
@@ -50,7 +50,7 @@ func TestRateLimiterWithDifferentEmails(t *testing.T) {
 		}
 	}
 
-	// 6th email from the same ip should fail
+	// 6th  different email from the same IP should fail
 	allow, _ := rl.Allow(ip, "test5@email.com")
 	if allow {
 		t.Fatal("expected to fail at 6th attempt")
@@ -85,27 +85,31 @@ func TestRateLimiterWindowReset(t *testing.T) {
 func TestRateLimiterDifferentIPs(t *testing.T) {
 	clock := &mockClock{time: time.Now()}
 	rl := newTestRateLimiter(clock)
-
 	ips := []string{
 		"127.0.0.1",
 		"127.0.0.2",
 		"127.0.0.3",
 		"127.0.0.4",
 		"127.0.0.5",
+		"127.0.0.6",
+		"127.0.0.7",
+		"127.0.0.8",
+		"127.0.0.9",
+		"127.0.0.10",
 	}
-	email := "test@email.com"
 
-	for _, ip := range ips {
-		allow, _ := rl.Allow(ip, email)
+	// 10 different IPs with same email
+	for i, ip := range ips {
+		allow, _ := rl.Allow(ip, testemail)
 		if !allow {
-			t.Fatal("expected to for the first 3 attempts to pass")
+			t.Fatalf("unexpected fail at attempt %d", i+1)
 		}
 	}
 
-	// 4th with same ip should fail
-	allow, _ := rl.Allow("127.0.0.6", email)
+	// 11th attempt with same email should fail
+	allow, _ := rl.Allow("127.0.0.11", testemail)
 	if allow {
-		t.Fatal("expected the 4th attempt to succeed but it failed")
+		t.Fatal("expected to fail at 11th attempt")
 	}
 
 }
@@ -117,7 +121,7 @@ func newTestRateLimiter(clock core.Clock) *core.TotalRateLimiter {
 	}
 	emailPolicy := core.RateLimitingPolicy{
 		Window: 30 * time.Minute,
-		Limit:  5,
+		Limit:  10,
 	}
 
 	email := core.NewInMemoryRateLimiter(clock, emailPolicy)
