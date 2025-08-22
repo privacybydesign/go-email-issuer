@@ -4,7 +4,10 @@
     "base_url": "http://localhost:8080",
     "secret": "changeme", 
     "ttl": "15m",
-    "storage_type": "inmemory" 
+    "storage_type": "inmemory" ,
+    "use_tls": false,
+    "tls_priv_key_path": "",
+    "tls_cert_path":""
   },
   "Mail": {
     "mail_host": "your.smtp.host",
