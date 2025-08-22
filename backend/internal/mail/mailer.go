@@ -35,7 +35,6 @@ func (sm SmtpMailer) SendEmail(e Email) error {
 	gm.SetHeader("To", e.To)
 	gm.SetHeader("Subject", e.Subject)
 	gm.SetBody("text/html", e.Body)
-
 	err := sm.dialer.DialAndSend(gm)
 	if err != nil {
 		log.Printf("error: %s", err)

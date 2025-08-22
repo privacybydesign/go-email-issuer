@@ -9,5 +9,5 @@ With `make run`
 With `docker-compose up`
 
 **Prerequisites**: Add the key to the email issuer irma server in
-`backend/issue/keys`. Use `config.json.sample` to set up your config for the go
+`backend/issue/keys`. Use `config.sample.json` to set up your config for the go
 app.
