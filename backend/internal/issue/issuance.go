@@ -3,6 +3,7 @@ package issue
 import (
 	"crypto/rsa"
 	"os"
+	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
 	irma "github.com/privacybydesign/irmago"
@@ -15,7 +16,7 @@ type JwtCreator interface {
 func NewIrmaJwtCreator(privateKeyPath string,
 	issuerId string,
 	crediential string,
-	attribute string,
+	attributes []string,
 ) (*DefaultJwtCreator, error) {
 	keyBytes, err := os.ReadFile(privateKeyPath)
 
@@ -33,7 +34,7 @@ func NewIrmaJwtCreator(privateKeyPath string,
 		issuerId:   issuerId,
 		privateKey: privateKey,
 		credential: crediential,
-		attribute:  attribute,
+		attributes: attributes,
 	}, nil
 }
 
@@ -41,7 +42,7 @@ type DefaultJwtCreator struct {
 	privateKey *rsa.PrivateKey
 	issuerId   string
 	credential string
-	attribute  string
+	attributes []string
 }
 
 func (jc *DefaultJwtCreator) CreateJwt(email string) (string, error) {
@@ -49,7 +50,8 @@ func (jc *DefaultJwtCreator) CreateJwt(email string) (string, error) {
 		{
 			CredentialTypeID: irma.NewCredentialTypeIdentifier(jc.credential),
 			Attributes: map[string]string{
-				jc.attribute: email,
+				jc.attributes[0]: email,
+				jc.attributes[1]: email[strings.Index(email, "@")+1:],
 			},
 		},
 	})

@@ -11,9 +11,9 @@ func TestCreatingJwt(t *testing.T) {
 	testKeyPath := "./keys/priv.pem"
 	issuerId := "email_issuer"
 	credential := "irma-demo.sidn-pbdf.email"
-	attribute := "email"
+	attributes := []string{"email", "domain"}
 
-	jwtCreator, err := issue.NewIrmaJwtCreator(testKeyPath, issuerId, credential, attribute)
+	jwtCreator, err := issue.NewIrmaJwtCreator(testKeyPath, issuerId, credential, attributes)
 	if err != nil {
 		t.Fatalf("Failed to instantiate jwt creator: %v", err)
 	}
