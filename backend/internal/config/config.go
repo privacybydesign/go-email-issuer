@@ -43,6 +43,8 @@ type AppConfig struct {
 	UseTLS         bool         `json:"use_tls,omitempty"`
 	TLSPrivKeyPath string       `json:"tls_priv_key_path,omitempty"`
 	TLSCertPath    string       `json:"tls_cert_path,omitempty"`
+	EmailLimit     int          `json:"email_limit"`
+	IPLimit        int          `json:"ip_limit"`
 }
 type MailTemplate struct {
 	Subject     string `json:"mail_subject"`
