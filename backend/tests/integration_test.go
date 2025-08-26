@@ -19,8 +19,8 @@ import (
 
 var testCfg = &config.Config{
 	App: config.AppConfig{
-		Addr:   ":8080",
-		Secret: string(testsecret),
+		Addr:    ":8080",
+		HMACKey: string(testkey),
 	},
 	Mail: config.MailConfig{
 		From: "noreply@example.com",
@@ -102,7 +102,7 @@ func TestHealthCheckEndpoint(t *testing.T) {
 }
 
 func TestVerifyEmailHappyPath(t *testing.T) {
-	testToken, err := core.MakeToken(testemail, testsecret, time.Now().Add(time.Hour).Unix())
+	testToken, err := core.MakeToken(testemail, testkey, time.Now().Add(time.Hour).Unix())
 	require.NoError(t, err)
 
 	res := makeVerifyEmailRequest(t, testToken)
@@ -119,7 +119,7 @@ func TestVerifyEmail_InvalidAndExpired(t *testing.T) {
 	})
 
 	t.Run("expired", func(t *testing.T) {
-		tok, err := core.MakeToken(testemail, testsecret, time.Now().Add(-time.Hour).Unix())
+		tok, err := core.MakeToken(testemail, testkey, time.Now().Add(-time.Hour).Unix())
 		require.NoError(t, err)
 		resp := makeVerifyEmailRequest(t, tok)
 		require.True(t, resp.StatusCode == http.StatusBadRequest)

@@ -64,9 +64,9 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	secret := []byte(a.cfg.App.Secret)
+	hmac_key := []byte(a.cfg.App.HMACKey)
 
-	email, err := core.ParseToken(req.Token, secret)
+	email, err := core.ParseToken(req.Token, hmac_key)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_or_expired")
 		return
@@ -111,11 +111,11 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	secret := []byte(a.cfg.App.Secret)
-	expiresAt := time.Now().Add(time.Duration(a.cfg.App.TTL)).Unix()
+	hmac_key := []byte(a.cfg.App.HMACKey)
+	expiresAt := time.Now().Add(time.Duration(a.cfg.App.VerificationLinkTTL)).Unix()
 
 	// build token
-	tok, err := core.MakeToken(in.Email, secret, expiresAt)
+	tok, err := core.MakeToken(in.Email, hmac_key, expiresAt)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "token_error")
 		return

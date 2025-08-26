@@ -35,15 +35,15 @@ type RedisSentinelConfig struct {
 }
 
 type AppConfig struct {
-	Addr           string         `json:"addr"`
-	BaseURL        string         `json:"base_url"`
-	Secret         string         `json:"secret"`
-	TTL            JSONDuration   `json:"ttl"`
-	StorageType    string         `json:"storage_type"`
-	UseTLS         bool           `json:"use_tls,omitempty"`
-	TLSPrivKeyPath string         `json:"tls_priv_key_path,omitempty"`
-	TLSCertPath    string         `json:"tls_cert_path,omitempty"`
-	RateLimitCount map[string]int `json:"rate_limit_count"`
+	Addr                string         `json:"addr"`
+	BaseURL             string         `json:"base_url"`
+	HMACKey             string         `json:"hmac_key"`
+	VerificationLinkTTL JSONDuration   `json:"verification_link_ttl"`
+	StorageType         string         `json:"storage_type"`
+	UseTLS              bool           `json:"use_tls,omitempty"`
+	TLSPrivKeyPath      string         `json:"tls_priv_key_path,omitempty"`
+	TLSCertPath         string         `json:"tls_cert_path,omitempty"`
+	RateLimitCount      map[string]int `json:"rate_limit_count"`
 }
 type MailTemplate struct {
 	Subject     string `json:"mail_subject"`
@@ -97,11 +97,11 @@ func LoadFromFile(path string) (*Config, error) {
 
 func validate(cfg *Config) error {
 	// App
-	if cfg.App.Secret == "" || cfg.App.Secret == "changeme" {
+	if cfg.App.HMACKey == "" || cfg.App.HMACKey == "changeme" {
 		return errors.New("SECRET must be set to a non-default value")
 	}
-	if cfg.App.TTL <= 0 {
-		return fmt.Errorf("TTLDUR must be > 0 (got %s)", time.Duration(cfg.App.TTL))
+	if cfg.App.VerificationLinkTTL <= 0 {
+		return fmt.Errorf("TTLDUR must be > 0 (got %s)", time.Duration(cfg.App.VerificationLinkTTL))
 	}
 
 	// Mail
