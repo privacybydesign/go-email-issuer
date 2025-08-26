@@ -14,12 +14,8 @@ type JwtCreator interface {
 	CreateJwt(email string) (jwt string, err error)
 }
 
-func NewIrmaJwtCreator(cfg config.JWTConfig, privateKeyPath string,
-	issuerId string,
-	crediential string,
-	attributes config.EmailCredentialAttributes,
-) (*DefaultJwtCreator, error) {
-	keyBytes, err := os.ReadFile(privateKeyPath)
+func NewIrmaJwtCreator(cfg config.JWTConfig) (*DefaultJwtCreator, error) {
+	keyBytes, err := os.ReadFile(cfg.PrivateKeyPath)
 
 	if err != nil {
 		return nil, err
@@ -32,9 +28,9 @@ func NewIrmaJwtCreator(cfg config.JWTConfig, privateKeyPath string,
 	}
 
 	return &DefaultJwtCreator{
-		issuerId:   issuerId,
+		issuerId:   cfg.IssuerID,
 		privateKey: privateKey,
-		credential: crediential,
+		credential: cfg.Credential,
 		attributes: cfg.Attributes,
 	}, nil
 }
