@@ -18,6 +18,8 @@ func buildTotalLimiter(cfg *config.Config) *core.TotalRateLimiter {
 	case "inmemory", "memory":
 		email := core.NewInMemoryRateLimiter(core.NewSystemClock(), emailPolicy)
 		ip := core.NewInMemoryRateLimiter(core.NewSystemClock(), ipPolicy)
+		log.Print("Running in memory storage type")
+
 		return core.NewTotalRateLimiter(email, ip)
 
 	case "redis":
@@ -27,6 +29,8 @@ func buildTotalLimiter(cfg *config.Config) *core.TotalRateLimiter {
 		}
 		email := core.NewRedisRateLimiter(rc, cfg.Redis.Namespace, emailPolicy)
 		ip := core.NewRedisRateLimiter(rc, cfg.Redis.Namespace, ipPolicy)
+		log.Print("Running with redis storage type")
+
 		return core.NewTotalRateLimiter(email, ip)
 	case "redis_sentinel":
 		sc, err := storage.NewRedisSentinelClient(cfg)
@@ -35,6 +39,7 @@ func buildTotalLimiter(cfg *config.Config) *core.TotalRateLimiter {
 		}
 		email := core.NewRedisRateLimiter(sc, cfg.Redis.Namespace, emailPolicy)
 		ip := core.NewRedisRateLimiter(sc, cfg.Redis.Namespace, ipPolicy)
+		log.Print("Running with redis sentinel storage type")
 		return core.NewTotalRateLimiter(email, ip)
 
 	default:
