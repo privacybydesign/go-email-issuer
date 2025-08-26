@@ -2,14 +2,9 @@ package main
 
 import (
 	"backend/internal/config"
-	"backend/internal/core"
 	api "backend/internal/http"
-	"backend/internal/mail"
-	"backend/internal/storage"
 	"flag"
 	"log"
-	"net/http"
-	"time"
 )
 
 func main() {
@@ -31,45 +26,9 @@ func main() {
 	}
 
 	// --------------------- SET UP SERVER --------------------------
-
-	totalLimiter := buildTotalLimiter(cfg)
-	SMTPMailer := mail.NewSmtpMailer(&cfg.Mail)
-
-	router := api.NewAPI(cfg, totalLimiter, SMTPMailer).Routes()
-
-	srv := &http.Server{
-		Addr:              cfg.App.Addr,
-		Handler:           router,
-		ReadHeaderTimeout: 5 * time.Second,
-	}
+	serv := api.NewServer(cfg)
 
 	log.Printf("listening on %s", cfg.App.Addr)
-	log.Fatal(srv.ListenAndServe())
+	log.Fatal(serv.ListenAndServe())
 
-}
-
-// --------------------- Limiter Middleware --------------------------
-func buildTotalLimiter(cfg *config.Config) *core.TotalRateLimiter {
-	emailPolicy := core.RateLimitingPolicy{Limit: 3, Window: 30 * time.Minute}
-	ipPolicy := core.RateLimitingPolicy{Limit: 10, Window: 30 * time.Minute}
-
-	switch cfg.App.StorageType {
-	case "inmemory", "memory":
-		email := core.NewInMemoryRateLimiter(core.NewSystemClock(), emailPolicy)
-		ip := core.NewInMemoryRateLimiter(core.NewSystemClock(), ipPolicy)
-		return core.NewTotalRateLimiter(email, ip)
-
-	case "redis":
-		rc, err := storage.NewRedisClient(cfg)
-		if err != nil {
-			log.Fatalf("Error connecting to Redis: %v", err)
-		}
-		email := core.NewRedisRateLimiter(rc, cfg.Redis.Namespace, emailPolicy)
-		ip := core.NewRedisRateLimiter(rc, cfg.Redis.Namespace, ipPolicy)
-		return core.NewTotalRateLimiter(email, ip)
-
-	default:
-		log.Fatalf("Unsupported storage type for rate limiter: %s", cfg.App.StorageType)
-		return nil
-	}
 }
