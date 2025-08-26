@@ -36,9 +36,11 @@
     "private_key_path": "./internal/issue/keys/private_key.pem",
     "issuer_id": "email_issuer",
     "credential_type": "email",
-    "attributes": [
-      "email", "domain"
-    ]  },
+    "attributes": {
+      "email": "email",
+      "email_domain": "domain"
+    }
+  },
   "redis": {
     "host": "localhost",
     "port": 6379,

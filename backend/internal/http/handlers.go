@@ -72,7 +72,7 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwtCreator, err := issue.NewIrmaJwtCreator(a.cfg.JWT.PrivateKeyPath, a.cfg.JWT.IssuerID, a.cfg.JWT.Credential, a.cfg.JWT.Attributes)
+	jwtCreator, err := issue.NewIrmaJwtCreator(a.cfg.JWT, a.cfg.JWT.PrivateKeyPath, a.cfg.JWT.IssuerID, a.cfg.JWT.Credential, a.cfg.JWT.Attributes)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "jwt_creator_error")
 		return

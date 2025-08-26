@@ -36,7 +36,10 @@ var testCfg = &config.Config{
 		PrivateKeyPath: "./keys/priv.pem",
 		IssuerID:       "email-issuer",
 		Credential:     "irma-demo.sidn-pbdf.email",
-		Attributes:     []string{"email", "domain"},
+		Attributes: config.EmailCredentialAttributes{
+			Email:       "email",
+			EmailDomain: "domain",
+		},
 	},
 }
 

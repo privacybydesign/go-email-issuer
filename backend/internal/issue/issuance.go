@@ -1,6 +1,7 @@
 package issue
 
 import (
+	"backend/internal/config"
 	"crypto/rsa"
 	"os"
 	"strings"
@@ -13,10 +14,10 @@ type JwtCreator interface {
 	CreateJwt(email string) (jwt string, err error)
 }
 
-func NewIrmaJwtCreator(privateKeyPath string,
+func NewIrmaJwtCreator(cfg config.JWTConfig, privateKeyPath string,
 	issuerId string,
 	crediential string,
-	attributes []string,
+	attributes config.EmailCredentialAttributes,
 ) (*DefaultJwtCreator, error) {
 	keyBytes, err := os.ReadFile(privateKeyPath)
 
@@ -34,7 +35,7 @@ func NewIrmaJwtCreator(privateKeyPath string,
 		issuerId:   issuerId,
 		privateKey: privateKey,
 		credential: crediential,
-		attributes: attributes,
+		attributes: cfg.Attributes,
 	}, nil
 }
 
@@ -42,7 +43,7 @@ type DefaultJwtCreator struct {
 	privateKey *rsa.PrivateKey
 	issuerId   string
 	credential string
-	attributes []string
+	attributes config.EmailCredentialAttributes
 }
 
 func (jc *DefaultJwtCreator) CreateJwt(email string) (string, error) {
@@ -50,8 +51,8 @@ func (jc *DefaultJwtCreator) CreateJwt(email string) (string, error) {
 		{
 			CredentialTypeID: irma.NewCredentialTypeIdentifier(jc.credential),
 			Attributes: map[string]string{
-				jc.attributes[0]: email,
-				jc.attributes[1]: email[strings.Index(email, "@")+1:],
+				jc.attributes.Email:       email,
+				jc.attributes.EmailDomain: email[strings.Index(email, "@")+1:],
 			},
 		},
 	})
