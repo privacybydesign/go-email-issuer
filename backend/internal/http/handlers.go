@@ -107,7 +107,7 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := netmail.ParseAddress(in.Email); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_email")
+		writeError(w, http.StatusBadRequest, "error_email_format")
 		return
 	}
 
@@ -143,7 +143,7 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 
 	err = a.mailer.SendEmail(emData)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "email_send_error")
+		writeError(w, http.StatusInternalServerError, "error_sending_email")
 		return
 	}
 
@@ -152,7 +152,7 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		ip := clientIP(r)
 		allow, _ := a.limiter.Allow(ip, in.Email)
 		if !allow {
-			writeError(w, http.StatusTooManyRequests, "rate_limited")
+			writeError(w, http.StatusTooManyRequests, "error_ratelimit")
 			return
 		}
 	}
