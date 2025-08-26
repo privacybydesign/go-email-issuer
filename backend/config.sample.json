@@ -1,5 +1,5 @@
 {
-  "App": {
+  "app": {
     "addr": ":8080",
     "base_url": "http://localhost:8080",
     "secret": "changeme", 
@@ -8,10 +8,12 @@
     "use_tls": false,
     "tls_priv_key_path": "",
     "tls_cert_path":"",
-    "email_limit": 10,
-    "ip_limit": 10
+    "rate_limit_count": {
+      "email": 5,
+      "ip": 5
+    }
   },
-  "Mail": {
+  "mail": {
     "mail_host": "your.smtp.host",
     "mail_user": "user",
     "mail_password": "password",
@@ -30,19 +32,19 @@
     },
     "mail_use_tls": false
   },
-  "JWT": {
+  "jwt": {
     "private_key_path": "./internal/issue/keys/private_key.pem",
     "issuer_id": "email_issuer",
     "credential_type": "email",
     "attribute": "email"
   },
-  "Redis": {
+  "redis": {
     "host": "localhost",
     "port": 6379,
     "password": "password",
     "namespace": "yivi"
   },
-  "RedisSentinel": {
+  "redis_sentinel": {
     "sentinel_host": "localhost",
     "sentinel_port": 26379,
     "password": "password",
