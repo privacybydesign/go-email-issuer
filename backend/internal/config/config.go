@@ -61,13 +61,18 @@ type MailConfig struct {
 	MailTemplates map[string]MailTemplate `json:"mail_templates"`
 }
 
+type EmailCredentialAttributes struct {
+	Email       string `json:"email"`
+	EmailDomain string `json:"email_domain"`
+}
+
 type JWTConfig struct {
-	IRMAServerURL  string `json:"irma_server_url"`
-	PrivateKeyPath string `json:"private_key_path"`
-	IssuerID       string `json:"issuer_id"`
-	CredentialType string `json:"credential_type"`
-	Credential     string `json:"full_credential"`
-	Attribute      string `json:"attribute"`
+	IRMAServerURL  string                    `json:"irma_server_url"`
+	PrivateKeyPath string                    `json:"private_key_path"`
+	IssuerID       string                    `json:"issuer_id"`
+	CredentialType string                    `json:"credential_type"`
+	Credential     string                    `json:"full_credential"`
+	Attributes     EmailCredentialAttributes `json:"attributes"`
 }
 
 func LoadFromFile(path string) (*Config, error) {

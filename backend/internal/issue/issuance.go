@@ -1,8 +1,10 @@
 package issue
 
 import (
+	"backend/internal/config"
 	"crypto/rsa"
 	"os"
+	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
 	irma "github.com/privacybydesign/irmago"
@@ -12,12 +14,8 @@ type JwtCreator interface {
 	CreateJwt(email string) (jwt string, err error)
 }
 
-func NewIrmaJwtCreator(privateKeyPath string,
-	issuerId string,
-	crediential string,
-	attribute string,
-) (*DefaultJwtCreator, error) {
-	keyBytes, err := os.ReadFile(privateKeyPath)
+func NewIrmaJwtCreator(cfg config.JWTConfig) (*DefaultJwtCreator, error) {
+	keyBytes, err := os.ReadFile(cfg.PrivateKeyPath)
 
 	if err != nil {
 		return nil, err
@@ -30,10 +28,10 @@ func NewIrmaJwtCreator(privateKeyPath string,
 	}
 
 	return &DefaultJwtCreator{
-		issuerId:   issuerId,
+		issuerId:   cfg.IssuerID,
 		privateKey: privateKey,
-		credential: crediential,
-		attribute:  attribute,
+		credential: cfg.Credential,
+		attributes: cfg.Attributes,
 	}, nil
 }
 
@@ -41,7 +39,7 @@ type DefaultJwtCreator struct {
 	privateKey *rsa.PrivateKey
 	issuerId   string
 	credential string
-	attribute  string
+	attributes config.EmailCredentialAttributes
 }
 
 func (jc *DefaultJwtCreator) CreateJwt(email string) (string, error) {
@@ -49,7 +47,8 @@ func (jc *DefaultJwtCreator) CreateJwt(email string) (string, error) {
 		{
 			CredentialTypeID: irma.NewCredentialTypeIdentifier(jc.credential),
 			Attributes: map[string]string{
-				jc.attribute: email,
+				jc.attributes.Email:       email,
+				jc.attributes.EmailDomain: email[strings.Index(email, "@")+1:],
 			},
 		},
 	})
