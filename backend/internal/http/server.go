@@ -11,8 +11,8 @@ import (
 )
 
 func buildTotalLimiter(cfg *config.Config) *core.TotalRateLimiter {
-	emailPolicy := core.RateLimitingPolicy{Limit: cfg.App.EmailLimit, Window: 30 * time.Minute}
-	ipPolicy := core.RateLimitingPolicy{Limit: cfg.App.IPLimit, Window: 30 * time.Minute}
+	emailPolicy := core.RateLimitingPolicy{Limit: cfg.App.RateLimitCount["email"], Window: 30 * time.Minute}
+	ipPolicy := core.RateLimitingPolicy{Limit: cfg.App.RateLimitCount["ip"], Window: 30 * time.Minute}
 
 	switch cfg.App.StorageType {
 	case "inmemory", "memory":

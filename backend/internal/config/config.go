@@ -35,16 +35,15 @@ type RedisSentinelConfig struct {
 }
 
 type AppConfig struct {
-	Addr           string       `json:"addr"`
-	BaseURL        string       `json:"base_url"`
-	Secret         string       `json:"secret"`
-	TTL            JSONDuration `json:"ttl"`
-	StorageType    string       `json:"storage_type"`
-	UseTLS         bool         `json:"use_tls,omitempty"`
-	TLSPrivKeyPath string       `json:"tls_priv_key_path,omitempty"`
-	TLSCertPath    string       `json:"tls_cert_path,omitempty"`
-	EmailLimit     int          `json:"email_limit"`
-	IPLimit        int          `json:"ip_limit"`
+	Addr           string         `json:"addr"`
+	BaseURL        string         `json:"base_url"`
+	Secret         string         `json:"secret"`
+	TTL            JSONDuration   `json:"ttl"`
+	StorageType    string         `json:"storage_type"`
+	UseTLS         bool           `json:"use_tls,omitempty"`
+	TLSPrivKeyPath string         `json:"tls_priv_key_path,omitempty"`
+	TLSCertPath    string         `json:"tls_cert_path,omitempty"`
+	RateLimitCount map[string]int `json:"rate_limit_count"`
 }
 type MailTemplate struct {
 	Subject     string `json:"mail_subject"`
