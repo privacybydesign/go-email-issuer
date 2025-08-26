@@ -14,13 +14,13 @@ var ErrInvalid = errors.New("invalid_or_tampered")
 var ErrExpired = errors.New("expired")
 
 // Make verification token email:timestamp:signature
-func MakeToken(email string, secret []byte, expiresAt int64) (string, error) {
+func MakeToken(email string, hmac_key []byte, expiresAt int64) (string, error) {
 	if strings.Contains(email, ":") {
 		return "", errors.New("email_must_not_contain_colon")
 	}
 	msg := email + ":" + strconv.FormatInt(expiresAt, 10)
 
-	mac := hmac.New(sha256.New, secret)
+	mac := hmac.New(sha256.New, hmac_key)
 	mac.Write([]byte(msg))
 	sig := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
 	token := strings.Join([]string{email, strconv.FormatInt(expiresAt, 10), sig}, ":")

@@ -64,9 +64,9 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	secret := []byte(a.cfg.App.Secret)
+	hmac_key := []byte(a.cfg.App.HMACKey)
 
-	email, err := core.ParseToken(req.Token, secret)
+	email, err := core.ParseToken(req.Token, hmac_key)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_or_expired")
 		return
@@ -107,15 +107,15 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := netmail.ParseAddress(in.Email); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_email")
+		writeError(w, http.StatusBadRequest, "error_email_format")
 		return
 	}
 
-	secret := []byte(a.cfg.App.Secret)
-	expiresAt := time.Now().Add(time.Duration(a.cfg.App.TTL)).Unix()
+	hmac_key := []byte(a.cfg.App.HMACKey)
+	expiresAt := time.Now().Add(time.Duration(a.cfg.App.VerificationLinkTTL)).Unix()
 
 	// build token
-	tok, err := core.MakeToken(in.Email, secret, expiresAt)
+	tok, err := core.MakeToken(in.Email, hmac_key, expiresAt)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "token_error")
 		return
@@ -143,7 +143,7 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 
 	err = a.mailer.SendEmail(emData)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "email_send_error")
+		writeError(w, http.StatusInternalServerError, "error_sending_email")
 		return
 	}
 
@@ -152,7 +152,7 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		ip := clientIP(r)
 		allow, _ := a.limiter.Allow(ip, in.Email)
 		if !allow {
-			writeError(w, http.StatusTooManyRequests, "rate_limited")
+			writeError(w, http.StatusTooManyRequests, "error_ratelimit")
 			return
 		}
 	}
