@@ -141,12 +141,6 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		Body:    tmplStr,
 	}
 
-	err = a.mailer.SendEmail(emData)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "error_sending_email")
-		return
-	}
-
 	// rate limit for sending emails
 	if a.limiter != nil {
 		ip := clientIP(r)
@@ -155,6 +149,12 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusTooManyRequests, "error_ratelimit")
 			return
 		}
+	}
+
+	err = a.mailer.SendEmail(emData)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "error_sending_email")
+		return
 	}
 
 	jserr := writeJSON(w, http.StatusOK, map[string]any{

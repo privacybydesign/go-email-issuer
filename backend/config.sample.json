@@ -53,6 +53,6 @@
     "password": "password",
     "master_name": "master",
     "sentinel_username": "username",
-    "namespace": "yivi"
+    "sentinel_namespace": "yivi"
   }
 }
