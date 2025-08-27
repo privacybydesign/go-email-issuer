@@ -13,8 +13,8 @@ i18n
     resources: {
       en: {
         translation: {
-          index_title: "Add an e-mail address",
-          index_header: "Add e-mail address",
+          index_title: "Adding an e-mail address",
+          index_header: "Adding e-mail address",
           index_explanation: "Add your e-mail address in your Yivi app.",
           index_multiple_numbers:
             "Do you want to add multiple e-mail addresses? Then follow these steps for each e-mail address you want to add.",
@@ -22,8 +22,6 @@ i18n
           index_start: "Start verification",
           index_email_placeholder: "email@example.com",
           index_email_not_valid: "The entered e-mail address is not valid.",
-          validate_bot_control:
-            "The system is validating that you are not a bot. Please wait.",
           validate_header: "Check your e-mail address",
           validate_explanation:
             "Please check the e-mail address again for confirmation. Choose 'Back' to correct your e-mail address.",
@@ -46,12 +44,11 @@ i18n
           step_2: "Follow the link in the email.",
           step_3: "You will be redirected back to this page.",
           step_4:
-            "Scan the QR code in your Yivi app. On mobile, you can just open the Yivi app to continue.",
+            "Scan the QR code in your Yivi app. On mobile, you can continue to Yivi app by tapping on Open Yivi app.",
           step_5: "Complete the steps on your app to add the e-mail address.",
           verification_code: "Verification code",
-          sending_email: "Email is being sent...",
-          email_sent: "Email has been sent.",
-          verifying_token: "Code is being verified ...",
+          sending_email: "E-mail is being sent...",
+          email_sent: "E-mail has been sent.",
           error_header: "Error message",
           error_default:
             "An unknown error has occurred. Please try again later.",
@@ -75,11 +72,9 @@ i18n
           index_start: "Start verificatie",
           index_email_placeholder: "email@example.com",
           index_email_not_valid: "Het ingevoerde e-mailadres is niet geldig.",
-          validate_bot_control:
-            "Het systeem controleert of je geen bot bent. Even geduld alstublieft.",
           validate_header: "E-mailadres controleren",
           validate_explanation:
-            "Controleer het e-mailadres nogmaals ter bevestiging. Kies 'Terug' om je e-mailadres te corrigeren.",
+            "Controleer het e-mailadres nogmaals. Kies 'Terug' om je e-mailadres te corrigeren.",
           back: "Terug",
           confirm: "Bevestigen",
           error_email_address_format:
@@ -87,35 +82,34 @@ i18n
           error_internal:
             "Interne fout. Neem contact op met Yivi als dit vaker voorkomt.",
           error_sending_email:
-            "De email kan niet worden verzonden. Dit is waarschijnlijk een probleem in Yivi. Neem contact op met Yivi als dit vaker voorkomt.",
+            "De e-mail kan niet worden verzonden. Dit is waarschijnlijk een probleem in Yivi. Neem contact op met Yivi als dit vaker voorkomt.",
           error_ratelimit:
             "U heeft te vaak een verzoek gedaan. Probeer het opnieuw na {{time}}.",
           error_link_expired:
             "De verificatielink is verlopen. Start het proces opnieuw.",
           verify: "Verifiëren",
-          receive_email: "Je ontvangt een email van Yivi.",
+          receive_email: "Je ontvangt een e-mail van Yivi.",
           steps: "Doorloop de volgende stappen:",
-          step_1: "Open het email-bericht afkomstig van Yivi.",
-          step_2: "Kies de link in het email-bericht.",
+          step_1: "Open de e-mail die je van Yivi hebt ontvangen.",
+          step_2: "Klik op de link in de e-mail.",
           step_3: "Je wordt teruggeleid naar deze pagina.",
           step_4:
-            "Scan de QR-code in je Yivi-app. Op mobiel kan je de Yivi-app openen om door te gaan.",
+            "Scan de QR-code in je Yivi-app. Op mobiel, druk op Open Yivi-app om door te gaan.",
           step_5:
             "Voltooi de stappen in je app om het e-mailadres toe te voegen.",
           verification_code: "Verificatiecode",
-          sending_email: "Email wordt verstuurd...",
-          email_sent: "Email is verstuurd.",
-          verifying_token: "Code wordt geverifieerd ...",
+          sending_email: "E-mail wordt verstuurd...",
+          email_sent: "E-mail is verstuurd.",
           error_header: "Foutmelding",
           error_default:
             "Er is een onbekende fout opgetreden. Probeer het later opnieuw.",
           email_add_success: "E-mailadres toegevoegd.",
           email_add_cancel: "Geannuleerd.",
           email_add_error:
-            "Het is helaas niet gelukt dit e-mailadres toe te voegen aan de Yivi-app.",
+            "Het is helaas niet gelukt om dit e-mailadres toe te voegen aan de Yivi-app.",
           done_header: "E-mailadres toegevoegd",
           thank_you:
-            "Bedankt voor het gebruik van Yivi, u kunt deze pagina nu sluiten.",
+            "Bedankt voor het gebruiken van Yivi, u kunt deze pagina nu sluiten.",
           again: "Nog een e-mailadres toevoegen",
         },
       },
