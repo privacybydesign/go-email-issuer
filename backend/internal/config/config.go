@@ -12,11 +12,11 @@ import (
 )
 
 type Config struct {
-	App           AppConfig
-	Mail          MailConfig
-	JWT           JWTConfig
-	RedisSentinel RedisSentinelConfig
-	Redis         RedisConfig
+	App           AppConfig           `json:"app"`
+	Mail          MailConfig          `json:"mail"`
+	JWT           JWTConfig           `json:"jwt"`
+	RedisSentinel RedisSentinelConfig `json:"redis_sentinel"`
+	Redis         RedisConfig         `json:"redis"`
 }
 type RedisConfig struct {
 	Host      string `json:"host"`
