@@ -14,8 +14,8 @@ export default function EnrollPage() {
   const [errorMessage, setErrorMessage] = useState<string | undefined>(
     undefined
   );
-  const hash = window.location.hash;
   const location = useLocation();
+  const hash = location.hash;
 
   useEffect(() => {
     // only show the message if the user came from the validate page
