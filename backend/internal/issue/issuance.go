@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	irma "github.com/privacybydesign/irmago"
@@ -43,6 +44,7 @@ type DefaultJwtCreator struct {
 }
 
 func (jc *DefaultJwtCreator) CreateJwt(email string) (string, error) {
+	validity := irma.Timestamp(time.Unix(time.Now().AddDate(1, 0, 0).Unix(), 0))
 	issuanceRequest := irma.NewIssuanceRequest([]*irma.CredentialRequest{
 		{
 			CredentialTypeID: irma.NewCredentialTypeIdentifier(jc.credential),
@@ -50,6 +52,7 @@ func (jc *DefaultJwtCreator) CreateJwt(email string) (string, error) {
 				jc.attributes.Email:       email,
 				jc.attributes.EmailDomain: email[strings.Index(email, "@")+1:],
 			},
+			Validity: &validity,
 		},
 	})
 
