@@ -37,8 +37,8 @@ func buildTotalLimiter(cfg *config.Config) *core.TotalRateLimiter {
 		if err != nil {
 			log.Fatalf("Error connecting to Redis Sentinel: %v", err)
 		}
-		email := core.NewRedisRateLimiter(sc, cfg.Redis.Namespace, emailPolicy)
-		ip := core.NewRedisRateLimiter(sc, cfg.Redis.Namespace, ipPolicy)
+		email := core.NewRedisRateLimiter(sc, cfg.RedisSentinel.Namespace, emailPolicy)
+		ip := core.NewRedisRateLimiter(sc, cfg.RedisSentinel.Namespace, ipPolicy)
 		log.Print("Running with redis sentinel storage type")
 		return core.NewTotalRateLimiter(email, ip)
 
