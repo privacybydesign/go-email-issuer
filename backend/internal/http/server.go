@@ -13,7 +13,6 @@ import (
 func buildTotalLimiter(cfg *config.Config) *core.TotalRateLimiter {
 	emailPolicy := core.RateLimitingPolicy{Limit: cfg.App.RateLimitCount["email"], Window: 30 * time.Minute}
 	ipPolicy := core.RateLimitingPolicy{Limit: cfg.App.RateLimitCount["ip"], Window: 30 * time.Minute}
-	log.Printf("redis sentinel namespace %s ", cfg.RedisSentinel.Namespace)
 
 	switch cfg.App.StorageType {
 	case "inmemory", "memory":
