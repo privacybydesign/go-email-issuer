@@ -79,6 +79,7 @@ func NewRedisRateLimiter(redis *redis.Client, namespace string, policy RateLimit
 func (r *RedisRateLimiter) Allow(key string) (bool, time.Duration, error) {
 
 	key = fmt.Sprintf("%s:%s", r.namespace, key)
+	fmt.Println("Rate limiter key:", key)
 
 	count, err := r.rclient.Incr(r.ctx, key).Result()
 	if err != nil {
