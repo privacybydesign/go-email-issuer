@@ -137,8 +137,9 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	emData := mail.Email{From: a.cfg.Mail.From, To: in.Email,
-		Subject: mailTmpl.Subject,
-		Body:    tmplStr,
+		Subject:    mailTmpl.Subject,
+		Body:       tmplStr,
+		SenderName: a.cfg.Mail.SenderName,
 	}
 
 	// rate limit for sending emails

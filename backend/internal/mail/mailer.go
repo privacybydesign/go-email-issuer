@@ -8,10 +8,11 @@ import (
 )
 
 type Email struct {
-	From    string
-	To      string
-	Subject string
-	Body    string
+	From       string
+	To         string
+	Subject    string
+	Body       string
+	SenderName string
 }
 
 type Mailer interface {
@@ -31,7 +32,7 @@ func NewSmtpMailer(mcfg *config.MailConfig) *SmtpMailer {
 func (sm SmtpMailer) SendEmail(e Email) error {
 
 	gm := gomail.NewMessage()
-	gm.SetHeader("From", e.From)
+	gm.SetAddressHeader("From", e.From, e.SenderName)
 	gm.SetHeader("To", e.To)
 	gm.SetHeader("Subject", e.Subject)
 	gm.SetBody("text/html", e.Body)
