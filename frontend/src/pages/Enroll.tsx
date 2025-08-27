@@ -44,7 +44,8 @@ export default function EnrollPage() {
         const res: VerifyResponse = await response.json();
 
         import("@privacybydesign/yivi-frontend").then((yivi) => {
-          const issuance = yivi.newPopup({
+          const issuance = yivi.newWeb({
+            element: "#yivi-web-form",
             language: i18n.language,
             session: {
               url: res.irma_server_url,
@@ -142,6 +143,15 @@ export default function EnrollPage() {
                   <p>{t("step_4")}</p>
                 </>
               )}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  marginTop: "40px",
+                }}
+              >
+                <div id="yivi-web-form"></div>
+              </div>
             </div>
           </div>
         </main>
