@@ -33,6 +33,7 @@ func (a *API) Routes() *mux.Router {
 
 	r.HandleFunc("/api/health", a.handleHealthCheck).Methods("GET")
 	r.HandleFunc("/api/verify", a.handleVerifyEmail).Methods("POST")
+	r.HandleFunc("/api/done", a.handleVerifyDone).Methods("GET")
 	r.HandleFunc("/api/send", a.handleSendEmail).Methods("POST")
 
 	spa := spaHandler{StaticPath: "../frontend/build", IndexPath: "index.html", FileServer: http.FileServer(http.Dir("../frontend/build"))}
