@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAppContext } from "../AppContext";
 import i18n from "../i18n";
 import { useEffect, useState } from "react";
 type VerifyResponse = {
@@ -16,6 +17,8 @@ export default function EnrollPage() {
   );
   const hash = window.location.hash;
   const location = useLocation();
+  const [token, setToken] = useState("");
+  const { email, setEmail } = useAppContext();
 
   useEffect(() => {
     // only show the message if the user came from the validate page
@@ -26,7 +29,7 @@ export default function EnrollPage() {
     }
   }, [location.state]);
   // user clicks the link in the email to verify and start the issuance
-  const VerifyAndStartIssuance = async (token: string) => {
+  const VerifyAndStartIssuance = async (email: string, token: string) => {
     try {
       // send email and token to verify endpoint to see if the token is valid for this email
       const response = await fetch("/api/verify", {
@@ -35,6 +38,7 @@ export default function EnrollPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          email: email,
           token: token,
         }),
       });
@@ -43,45 +47,76 @@ export default function EnrollPage() {
         // Start enrollment process
         const res: VerifyResponse = await response.json();
 
-        import("@privacybydesign/yivi-frontend").then((yivi) => {
-          const issuance = yivi.newPopup({
-            language: i18n.language,
-            session: {
-              url: res.irma_server_url,
-              start: {
-                method: "POST",
-                headers: {
-                  "Content-Type": "text/plain",
+        import("@privacybydesign/yivi-frontend")
+          .then((yivi) => {
+            const issuance = yivi.newPopup({
+              language: i18n.language,
+              session: {
+                url: res.irma_server_url,
+                start: {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "text/plain",
+                  },
+                  body: res.jwt,
                 },
-                body: res.jwt,
+                result: false,
               },
-              result: false,
-            },
-          });
-          issuance
-            .start()
-            .then(() => {
-              setMessage(t("email_add_success"));
-              navigate(`/${i18n.language}/done`);
-            })
-            .catch((e: string) => {
-              if (e === "Aborted") {
-                setErrorMessage(t("email_add_cancel"));
-              } else {
-                setErrorMessage(t("email_add_error"));
-              }
             });
-        });
+            issuance
+              .start()
+              .then(() => {
+                setMessage(t("email_add_success"));
+                navigate(`/${i18n.language}/done`);
+              })
+              .catch((e: string) => {
+                if (e === "Aborted") {
+                  setErrorMessage(t("email_add_cancel"));
+                } else {
+                  setErrorMessage(t("email_add_error"));
+                }
+              });
+          })
+          .finally(() => {
+            fetch("/api/done", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ email: email }),
+            });
+          });
+
         return;
+      } else {
+        const data = await response.json();
+        let errorCode = data.error;
+
+        if (errorCode) {
+          setErrorMessage(t(errorCode));
+        } else {
+          navigate(`/${i18n.language}/error`);
+        }
       }
     } catch (error) {
+      console.error(error);
       navigate(`/${i18n.language}/error`);
     }
   };
 
-  useEffect(() => {
-    const token = hash.replace("#verify:", "");
+  const enroll = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErrorMessage(undefined);
 
+    if (!token || token.length !== 6 || !email) {
+      navigate(`/${i18n.language}/error`);
+      return;
+    }
+
+    await VerifyAndStartIssuance(email, token);
+  };
+
+  useEffect(() => {
     if (hash) {
       const match = hash.match(/^#verify:([^:]+@[^\s:]+):(.+)$/);
       if (!match) {
@@ -89,18 +124,20 @@ export default function EnrollPage() {
         return;
       }
 
-      VerifyAndStartIssuance(token);
+      const email = match[1];
+      const token = match[2];
+      VerifyAndStartIssuance(email, token);
     }
   }, [navigate, t]);
 
   return (
     <>
-      <div id="container">
+      <form id="container" onSubmit={enroll}>
         <header>
           <h1>{t("index_header")}</h1>
         </header>
         <main>
-          <div className="sms-form">
+          <div className="email-form">
             <div id="block-token">
               {!errorMessage && message && (
                 <div
@@ -133,8 +170,23 @@ export default function EnrollPage() {
                     <li>{t("step_2")}</li>
                     <li>{t("step_3")}</li>
                     <li>{t("step_4")}</li>
-                    <li>{t("step_5")}</li>
                   </ol>
+                  <label htmlFor="token">{t("enter_verification_code")}</label>
+                  <input
+                    type="text"
+                    required
+                    className="form-control verification-code-input"
+                    value={token}
+                    pattern="[0-9A-Za-z]{6}"
+                    style={{ textTransform: "uppercase" }}
+                    onChange={(e) => setToken(e.target.value.toUpperCase())}
+                    autoFocus
+                  />
+                  <button
+                    className="hidden"
+                    id="submit-token"
+                    type="submit"
+                  ></button>
                 </>
               )}
               {hash && (
@@ -154,7 +206,7 @@ export default function EnrollPage() {
             )}
           </div>
         </footer>
-      </div>
+      </form>
     </>
   );
 }
