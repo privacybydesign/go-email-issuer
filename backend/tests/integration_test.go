@@ -106,6 +106,8 @@ func TestHealthCheckEndpoint(t *testing.T) {
 }
 
 func TestVerifyEmailHappyPath(t *testing.T) {
+	tokenErr := testTokenStorage.StoreToken(testemail, testToken)
+	require.NoError(t, tokenErr)
 
 	res := makeVerifyEmailRequest(t, testToken, testemail)
 	resBody := readResponseBody(t, res)
@@ -115,22 +117,13 @@ func TestVerifyEmailHappyPath(t *testing.T) {
 }
 
 func TestWrongTokenFails(t *testing.T) {
+	tokenErr := testTokenStorage.StoreToken(testemail, testToken)
+	require.NoError(t, tokenErr)
 
 	makeSendEmailRequest(t, testemail, "en")
 
 	resp := makeVerifyEmailRequest(t, "ABCDEF", testemail)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
-
-}
-
-func TestSendEmailEmptyData(t *testing.T) {
-
-	res := makeSendEmailRequest(t, "", "en")
-	require.Equal(t, http.StatusBadRequest, res.StatusCode)
-
-	resBody := readResponseBody(t, res)
-
-	require.Equal(t, resBody["error"], "email_required")
 
 }
 
@@ -143,5 +136,15 @@ func TestSendEmailHappyPath(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Expected status OK, got %s", resp.Status)
 	}
+
+}
+func TestSendEmailEmptyData(t *testing.T) {
+
+	res := makeSendEmailRequest(t, "", "en")
+	require.Equal(t, http.StatusBadRequest, res.StatusCode)
+
+	resBody := readResponseBody(t, res)
+
+	require.Equal(t, resBody["error"], "email_required")
 
 }
