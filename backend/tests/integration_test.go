@@ -51,7 +51,6 @@ var testMailer = mail.DummyMailer{}
 var testToken = "TESTTK"
 var testemail = "test@email.com"
 var testTokenStorage = core.NewInMemoryTokenStorage()
-var testTokenGenerator = core.NewRandomTokenGenerator()
 
 func NewTestAPI() *httpapi.API {
 	return httpapi.NewAPI(testCfg, testLimiter, testMailer, &core.StaticTokenGenerator{Token: testToken}, testTokenStorage)
