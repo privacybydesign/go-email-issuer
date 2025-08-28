@@ -39,15 +39,15 @@ i18n
             "You have requested to many times. Please try again after {{time}}.",
           error_link_expired:
             "The verification link has expired. Please start the process again.",
+          error_token_invalid: "The verification code is invalid.",
           verify: "Verify",
           receive_email: "You will receive an email from Yivi.",
           steps: "Take the following steps:",
           step_1: "Open the email sent by Yivi.",
-          step_2: "Follow the link in the email.",
-          step_3: "You will be redirected back to this page.",
-          step_4:
+          step_2: "Enter the verification code in the email or click the link.",
+          step_3:
             "Scan the QR code in your Yivi app. On mobile, you can just open the Yivi app to continue.",
-          step_5: "Complete the steps on your app to add the email address.",
+          step_4: "Complete the steps on your app to add the email address.",
           verification_code: "Verification code",
           sending_email: "Email is being sent...",
           email_sent: "Email has been sent.",
@@ -59,6 +59,7 @@ i18n
           email_add_cancel: "Cancelled.",
           email_add_error:
             "Unfortunately, it was not possible to add this email address to the Yivi app.",
+          enter_verification_code: "Enter verification code",
           done_header: "Email address added",
           thank_you: "Thank you for using Yivi, you can close this page now.",
           again: "Add another email address",
@@ -92,19 +93,20 @@ i18n
             "U heeft te vaak een verzoek gedaan. Probeer het opnieuw na {{time}}.",
           error_link_expired:
             "De verificatielink is verlopen. Start het proces opnieuw.",
+          error_token_invalid: "De verificatiecode is ongeldig.",
           verify: "Verifiëren",
           receive_email: "Je ontvangt een email van Yivi.",
           steps: "Doorloop de volgende stappen:",
           step_1: "Open het email-bericht afkomstig van Yivi.",
-          step_2: "Kies de link in het email-bericht.",
-          step_3: "Je wordt teruggeleid naar deze pagina.",
-          step_4:
+          step_2: "Voer de verificatiecode in de email in of klik op de link.",
+          step_3:
             "Scan de QR-code in je Yivi-app. Op mobiel kan je de Yivi-app openen om door te gaan.",
-          step_5:
+          step_4:
             "Voltooi de stappen in je app om het emailadres toe te voegen.",
           verification_code: "Verificatiecode",
           sending_email: "Email wordt verstuurd...",
           email_sent: "Email is verstuurd.",
+          enter_verification_code: "Voer verificatiecode in",
           verifying_token: "Code wordt geverifieerd ...",
           error_header: "Foutmelding",
           error_default:
