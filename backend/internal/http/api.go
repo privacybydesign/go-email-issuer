@@ -14,13 +14,15 @@ import (
 )
 
 type API struct {
-	cfg     *config.Config
-	limiter *core.TotalRateLimiter
-	mailer  mail.Mailer
+	cfg            *config.Config
+	limiter        *core.TotalRateLimiter
+	tokenGenerator core.TokenGenerator
+	tokenStorage   core.TokenStorage
+	mailer         mail.Mailer
 }
 
-func NewAPI(cfg *config.Config, limiter *core.TotalRateLimiter, mailer mail.Mailer) *API {
-	return &API{cfg: cfg, limiter: limiter, mailer: mailer}
+func NewAPI(cfg *config.Config, limiter *core.TotalRateLimiter, mailer mail.Mailer, tokenGenerator core.TokenGenerator, tokenStorage core.TokenStorage) *API {
+	return &API{cfg: cfg, limiter: limiter, mailer: mailer, tokenGenerator: tokenGenerator, tokenStorage: tokenStorage}
 }
 
 // Routes returns app's router
