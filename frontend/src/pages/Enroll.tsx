@@ -15,8 +15,8 @@ export default function EnrollPage() {
   const [errorMessage, setErrorMessage] = useState<string | undefined>(
     undefined
   );
-  const hash = window.location.hash;
   const location = useLocation();
+  const hash = location.hash;
   const [token, setToken] = useState("");
   const { email, setEmail } = useAppContext();
 
@@ -128,7 +128,7 @@ export default function EnrollPage() {
       const token = match[2];
       VerifyAndStartIssuance(email, token);
     }
-  }, [navigate, t]);
+  }, [navigate, t, hash]);
 
   return (
     <>

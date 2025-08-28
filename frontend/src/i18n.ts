@@ -60,6 +60,7 @@ i18n
           email_add_error:
             "Unfortunately, it was not possible to add this email address to the Yivi app.",
           enter_verification_code: "Enter verification code",
+          error_invalid_token: "The verification code is invalid.",
           done_header: "Email address added",
           thank_you: "Thank you for using Yivi, you can close this page now.",
           again: "Add another email address",
@@ -115,6 +116,7 @@ i18n
           email_add_cancel: "Geannuleerd.",
           email_add_error:
             "Het is helaas niet gelukt dit emailadres toe te voegen aan de Yivi-app.",
+          error_invalid_token: "De verificatiecode is ongeldig.",
           done_header: "Emailadres toegevoegd",
           thank_you:
             "Bedankt voor het gebruik van Yivi, u kunt deze pagina nu sluiten.",

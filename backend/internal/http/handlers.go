@@ -90,7 +90,7 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if expectedToken != req.Token {
-		writeError(w, http.StatusBadRequest, "invalid_token")
+		writeError(w, http.StatusBadRequest, "error_invalid_token")
 		return
 	}
 
