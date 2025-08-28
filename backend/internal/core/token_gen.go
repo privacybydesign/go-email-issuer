@@ -28,9 +28,9 @@ func (tg *RandomTokenGenerator) GenerateToken() string {
 // for testing purposes it's useful to have a static token
 // in production the RandomTokenGenerator should always be used
 type StaticTokenGenerator struct {
-	token string
+	Token string
 }
 
 func (tg *StaticTokenGenerator) GenerateToken() string {
-	return tg.token
+	return tg.Token
 }

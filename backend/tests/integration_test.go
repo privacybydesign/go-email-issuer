@@ -12,15 +12,13 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 )
 
 var testCfg = &config.Config{
 	App: config.AppConfig{
-		Addr:    ":8080",
-		HMACKey: string(testkey),
+		Addr: ":8080",
 	},
 	Mail: config.MailConfig{
 		From: "noreply@example.com",
@@ -50,9 +48,13 @@ var (
 var testLimiter = newTestRateLimiter(&mockClock{})
 
 var testMailer = mail.DummyMailer{}
+var testToken = "TESTTK"
+var testemail = "test@email.com"
+var testTokenStorage = core.NewInMemoryTokenStorage()
+var testTokenGenerator = core.NewRandomTokenGenerator()
 
 func NewTestAPI() *httpapi.API {
-	return httpapi.NewAPI(testCfg, testLimiter, testMailer)
+	return httpapi.NewAPI(testCfg, testLimiter, testMailer, &core.StaticTokenGenerator{Token: testToken}, testTokenStorage)
 }
 func TestMain(m *testing.M) {
 	testServer = httptest.NewServer(NewTestAPI().Routes())
@@ -61,9 +63,9 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func makeVerifyEmailRequest(t *testing.T, token string) *http.Response {
+func makeVerifyEmailRequest(t *testing.T, token string, email string) *http.Response {
 	t.Helper()
-	b, err := json.Marshal(map[string]string{"token": token})
+	b, err := json.Marshal(map[string]string{"token": token, "email": email})
 	require.NoError(t, err)
 
 	resp, err := http.Post(testServer.URL+"/api/verify", "application/json", bytes.NewBuffer(b))
@@ -105,29 +107,23 @@ func TestHealthCheckEndpoint(t *testing.T) {
 }
 
 func TestVerifyEmailHappyPath(t *testing.T) {
-	testToken, err := core.MakeToken(testemail, testkey, time.Now().Add(time.Hour).Unix())
-	require.NoError(t, err)
 
-	res := makeVerifyEmailRequest(t, testToken)
+	res := makeVerifyEmailRequest(t, testToken, testemail)
 	resBody := readResponseBody(t, res)
 
 	require.Equalf(t, http.StatusOK, res.StatusCode, "body: %v", resBody)
 
 }
 
-func TestVerifyEmail_InvalidAndExpired(t *testing.T) {
-	t.Run("malformed", func(t *testing.T) {
-		resp := makeVerifyEmailRequest(t, "not-a-token")
-		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	})
+func TestWrongTokenFails(t *testing.T) {
 
-	t.Run("expired", func(t *testing.T) {
-		tok, err := core.MakeToken(testemail, testkey, time.Now().Add(-time.Hour).Unix())
-		require.NoError(t, err)
-		resp := makeVerifyEmailRequest(t, tok)
-		require.True(t, resp.StatusCode == http.StatusBadRequest)
-	})
+	makeSendEmailRequest(t, testemail, "en")
+
+	resp := makeVerifyEmailRequest(t, "ABCDEF", testemail)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
 }
+
 func TestSendEmailEmptyData(t *testing.T) {
 
 	res := makeSendEmailRequest(t, "", "en")

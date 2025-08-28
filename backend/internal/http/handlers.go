@@ -85,7 +85,7 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 	expectedToken, retrieve_err := a.tokenStorage.RetrieveToken(req.Email)
 	if retrieve_err != nil {
-		writeError(w, http.StatusInternalServerError, "error_token_invalid")
+		writeError(w, http.StatusBadRequest, "error_token_invalid")
 		return
 	}
 

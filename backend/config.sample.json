@@ -2,8 +2,6 @@
   "app": {
     "addr": ":8080",
     "base_url": "http://localhost:8080",
-    "hmac_key": "changeme",
-    "verification_link_ttl": "12h",
     "storage_type": "inmemory" ,
     "use_tls": false,
     "tls_priv_key_path": "",
