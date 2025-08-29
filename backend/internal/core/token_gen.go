@@ -1,0 +1,36 @@
+package core
+
+import (
+	"math/rand"
+)
+
+type TokenGenerator interface {
+	GenerateToken() string
+}
+
+type RandomTokenGenerator struct{}
+
+func NewRandomTokenGenerator() *RandomTokenGenerator {
+	return &RandomTokenGenerator{}
+}
+
+func (tg *RandomTokenGenerator) GenerateToken() string {
+	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	length := 6
+	token := make([]byte, length)
+	for i := range token {
+		token[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(token)
+}
+
+// for testing purposes it's useful to have a static token
+// in production the RandomTokenGenerator should always be used
+type StaticTokenGenerator struct {
+	Token string
+}
+
+func (tg *StaticTokenGenerator) GenerateToken() string {
+	return tg.Token
+}

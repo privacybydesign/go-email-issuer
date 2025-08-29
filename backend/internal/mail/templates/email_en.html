@@ -49,7 +49,7 @@
             font-size: 18px;
         }
 
-        .button-container {
+        .code-container {
             text-align: center;
         }
 
@@ -129,14 +129,14 @@
                             <p>Dear Yivi User,</p>
                             <p>
                                 Thanks for using Yivi, your privacy-friendly identity wallet!<br />
-                                Click the button below to verify and add your email address to your Yivi app.
-                                The verification link will be valid for 24 hours.
+                                You can verify your email address by entering the following code.
+
                             </p>
                         </td>
                     </tr>
                     <tr>
-                        <td class="button-container">
-                            <a href="{{.}}" class="button">Verify your email address</a>
+                        <td class="code-container">
+                            <strong>{{.Token}}</strong>
                         </td>
                     </tr>
 
@@ -145,13 +145,13 @@
                             <table width="100%">
                                 <tr>
                                     <td class="alt-link">
-                                        If the button doesn&#39;t work, you can also verify your email by using the link
+                                        Alternatively, you can verify your email by using the link
                                         below:<br />
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 0px 24px 0px 16px; font-size: 18px; text-align: left;">
-                                        <a href="{{.}}" style="color:blue underline;">{{.}}</a>
+                                        <a href="{{.Link}}" style="color:blue underline;">{{.Link}}</a>
                                     </td>
                                 </tr>
                             </table>

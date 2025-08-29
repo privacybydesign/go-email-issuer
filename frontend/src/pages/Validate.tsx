@@ -1,7 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../AppContext";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { FaCheck } from "react-icons/fa";
 
 export default function ValidatePage() {
   const navigate = useNavigate();
@@ -35,29 +36,9 @@ export default function ValidatePage() {
         state: { from: "validate", message: "email_sent" },
       });
     } else {
-      let errorCode = await response.text();
-      errorCode = errorCode
-        .trim()
-        .replaceAll("-", "_")
-        .replaceAll(":", "_")
-        .toLowerCase();
+      const data = await response.json();
+      let errorCode = data.error;
       if (errorCode) {
-        // If rate limit error, extract the retry time from the response headers
-        if (errorCode === "error_ratelimit") {
-          const retryAfter = response.headers.get("Retry-After");
-          if (retryAfter) {
-            const retryTime = new Date(
-              Date.now() + parseInt(retryAfter) * 1000
-            );
-            const formattedTime = retryTime.toLocaleTimeString("nl-NL", {
-              timeZone: "Europe/Amsterdam",
-            });
-            const messageWithTime = t(errorCode, { time: formattedTime });
-            setErrorMessage(messageWithTime);
-            return;
-          }
-        }
-        // For other errors, just set the error message
         setErrorMessage(t(errorCode));
       } else {
         navigate(`/${i18n.language}/error`);
@@ -72,7 +53,7 @@ export default function ValidatePage() {
           <h1>{t("validate_header")}</h1>
         </header>
         <main>
-          <div className="sms-form">
+          <div className="email-form">
             {errorMessage && (
               <div id="status-bar" className="alert alert-danger" role="alert">
                 <div className="status-container">
@@ -81,8 +62,26 @@ export default function ValidatePage() {
               </div>
             )}
             <p>{t("validate_explanation")}</p>
-
-            <input type="email" value={email} disabled={true} />
+            <div
+              style={{
+                position: "relative",
+                display: "inline-block",
+                width: "100%",
+              }}
+            >
+              <input type="email" value={email} disabled />
+              <FaCheck
+                color="green"
+                size={18}
+                style={{
+                  position: "absolute",
+                  right: "0.75rem",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  pointerEvents: "none",
+                }}
+              />
+            </div>{" "}
           </div>
         </main>
         <footer>

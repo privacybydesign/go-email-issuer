@@ -18,7 +18,7 @@ func buildTotalLimiter(cfg *config.Config) *core.TotalRateLimiter {
 	case "inmemory", "memory":
 		email := core.NewInMemoryRateLimiter(core.NewSystemClock(), emailPolicy)
 		ip := core.NewInMemoryRateLimiter(core.NewSystemClock(), ipPolicy)
-		log.Print("Running in memory storage type")
+		log.Print("Running in memory storage type for rate limiting")
 
 		return core.NewTotalRateLimiter(email, ip)
 
@@ -29,7 +29,7 @@ func buildTotalLimiter(cfg *config.Config) *core.TotalRateLimiter {
 		}
 		email := core.NewRedisRateLimiter(rc, cfg.Redis.Namespace, emailPolicy)
 		ip := core.NewRedisRateLimiter(rc, cfg.Redis.Namespace, ipPolicy)
-		log.Print("Running with redis storage type")
+		log.Print("Running with redis storage type for rate limiting")
 
 		return core.NewTotalRateLimiter(email, ip)
 	case "redis_sentinel":
@@ -39,11 +39,36 @@ func buildTotalLimiter(cfg *config.Config) *core.TotalRateLimiter {
 		}
 		email := core.NewRedisRateLimiter(sc, cfg.RedisSentinel.Namespace, emailPolicy)
 		ip := core.NewRedisRateLimiter(sc, cfg.RedisSentinel.Namespace, ipPolicy)
-		log.Print("Running with redis sentinel storage type")
+		log.Print("Running with redis sentinel storage type for rate limiting")
 		return core.NewTotalRateLimiter(email, ip)
 
 	default:
 		log.Fatalf("Unsupported storage type for rate limiter: %s", cfg.App.StorageType)
+		return nil
+	}
+}
+
+func buildTokenStorage(cfg *config.Config) core.TokenStorage {
+	switch cfg.App.StorageType {
+	case "inmemory", "memory":
+		log.Print("Running in memory storage type for token storage")
+		return core.NewInMemoryTokenStorage()
+	case "redis":
+		rc, err := storage.NewRedisClient(cfg)
+		if err != nil {
+			log.Fatalf("Error connecting to Redis: %v", err)
+		}
+		log.Print("Running with redis storage type for token storage")
+		return core.NewRedisTokenStorage(rc, cfg.Redis.Namespace)
+	case "redis_sentinel":
+		sc, err := storage.NewRedisSentinelClient(cfg)
+		if err != nil {
+			log.Fatalf("Error connecting to Redis Sentinel: %v", err)
+		}
+		log.Print("Running with redis sentinel storage type for token storage")
+		return core.NewRedisTokenStorage(sc, cfg.RedisSentinel.Namespace)
+	default:
+		log.Fatalf("Unsupported storage type for token storage: %s", cfg.App.StorageType)
 		return nil
 	}
 }
@@ -54,10 +79,13 @@ type Server struct {
 }
 
 func NewServer(cfg *config.Config) *Server {
+
 	totalLimiter := buildTotalLimiter(cfg)
 	smtpMailer := mail.NewSmtpMailer(&cfg.Mail)
+	tokenGenerator := core.NewRandomTokenGenerator()
+	tokenStorage := buildTokenStorage(cfg)
 
-	router := NewAPI(cfg, totalLimiter, smtpMailer)
+	router := NewAPI(cfg, totalLimiter, smtpMailer, tokenGenerator, tokenStorage)
 
 	s := &Server{
 		cfg: cfg,

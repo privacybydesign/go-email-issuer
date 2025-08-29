@@ -1,6 +1,8 @@
 module backend
 
-go 1.23.2
+go 1.24.0
+
+toolchain go1.24.6
 
 require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
@@ -61,7 +63,8 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/crypto v0.35.0 // indirect
-	golang.org/x/sync v0.15.0 // indirect
+	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b // indirect
+	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.29.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
