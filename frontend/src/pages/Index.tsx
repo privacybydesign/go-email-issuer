@@ -48,7 +48,7 @@ export default function IndexPage() {
           <h1>{t("index_header")}</h1>
         </header>
         <main>
-          <div className="sms-form">
+          <div className="email-form">
             <p>{t("index_explanation")}</p>
             <p>{t("index_multiple_numbers")}</p>
             <label htmlFor="email-input">{t("email_address")}</label>

@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"backend/internal/core"
 	"backend/internal/issue"
 	"backend/internal/mail"
 	"fmt"
@@ -12,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 func (a *API) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
@@ -51,35 +49,59 @@ func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// otherwise, use http.FileServer to serve the static file
 	h.FileServer.ServeHTTP(w, r)
 }
+func (a *API) handleVerifyDone(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Email string `json:"email"`
+	}
+	decode_err := decodeJSON(w, r, &req)
+	if decode_err != nil || req.Email == "" {
+		writeError(w, http.StatusBadRequest, "email_required")
+		return
+	}
+
+	remove_err := a.tokenStorage.RemoveToken(req.Email)
+	if remove_err != nil {
+		writeError(w, http.StatusInternalServerError, "error_removing_token")
+		return
+	}
+
+}
 
 func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 
 	// token is passed in the body as JSON from the frontend
 	var req struct {
 		Token string `json:"token"`
+		Email string `json:"email"`
 	}
-	err := decodeJSON(w, r, &req)
-	if err != nil || req.Token == "" {
-		writeError(w, http.StatusBadRequest, "token_required")
+	decode_err := decodeJSON(w, r, &req)
+	if decode_err != nil || req.Token == "" || req.Email == "" {
+		writeError(w, http.StatusBadRequest, "token_or_email_required")
+		return
+	}
+	if a.tokenStorage == nil {
+		http.Error(w, "token generator not configured", http.StatusInternalServerError)
+		return
+	}
+	expectedToken, retrieve_err := a.tokenStorage.RetrieveToken(req.Email)
+	if retrieve_err != nil {
+		writeError(w, http.StatusBadRequest, "error_token_invalid")
 		return
 	}
 
-	hmac_key := []byte(a.cfg.App.HMACKey)
-
-	email, err := core.ParseToken(req.Token, hmac_key)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_or_expired")
+	if expectedToken != req.Token {
+		writeError(w, http.StatusBadRequest, "error_invalid_token")
 		return
 	}
 
-	jwtCreator, err := issue.NewIrmaJwtCreator(a.cfg.JWT)
-	if err != nil {
+	jwtCreator, creator_err := issue.NewIrmaJwtCreator(a.cfg.JWT)
+	if creator_err != nil {
 		writeError(w, http.StatusInternalServerError, "jwt_creator_error")
 		return
 	}
 
-	jwt, err := jwtCreator.CreateJwt(email)
-	if err != nil {
+	jwt, create_err := jwtCreator.CreateJwt(req.Email)
+	if create_err != nil {
 		writeError(w, http.StatusInternalServerError, "jwt_creation_error")
 		return
 	}
@@ -111,25 +133,27 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hmac_key := []byte(a.cfg.App.HMACKey)
-	expiresAt := time.Now().Add(time.Duration(a.cfg.App.VerificationLinkTTL)).Unix()
-
-	// build token
-	tok, err := core.MakeToken(in.Email, hmac_key, expiresAt)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "token_error")
-		return
-	}
-	baseURL := strings.TrimSuffix(a.cfg.App.BaseURL, "/")
-	verifyURL := fmt.Sprintf("%s/%s/enroll#verify:%s", baseURL, in.Language, tok)
-
 	// render email template and prepare the email
 	mailTmpl, ok := a.cfg.Mail.MailTemplates[in.Language]
 	if !ok {
 		mailTmpl = a.cfg.Mail.MailTemplates["en"]
 	}
 
-	tmplStr, err := mail.RenderHTMLtemplate(mailTmpl.TemplateDir, verifyURL)
+	if a.tokenGenerator == nil {
+		http.Error(w, "token generator not configured", http.StatusInternalServerError)
+		return
+	}
+	tok := a.tokenGenerator.GenerateToken()
+
+	err := a.tokenStorage.StoreToken(in.Email, tok)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "error_storing_token")
+		return
+	}
+	baseURL := strings.TrimSuffix(a.cfg.App.BaseURL, "/")
+	verifyURL := fmt.Sprintf("%s/%s/enroll#verify:%s:%s", baseURL, in.Language, in.Email, tok)
+
+	tmplStr, err := mail.RenderHTMLtemplate(mailTmpl.TemplateDir, verifyURL, tok)
 
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "template_render_error")

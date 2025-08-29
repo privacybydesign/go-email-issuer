@@ -14,13 +14,15 @@ import (
 )
 
 type API struct {
-	cfg     *config.Config
-	limiter *core.TotalRateLimiter
-	mailer  mail.Mailer
+	cfg            *config.Config
+	limiter        *core.TotalRateLimiter
+	tokenGenerator core.TokenGenerator
+	tokenStorage   core.TokenStorage
+	mailer         mail.Mailer
 }
 
-func NewAPI(cfg *config.Config, limiter *core.TotalRateLimiter, mailer mail.Mailer) *API {
-	return &API{cfg: cfg, limiter: limiter, mailer: mailer}
+func NewAPI(cfg *config.Config, limiter *core.TotalRateLimiter, mailer mail.Mailer, tokenGenerator core.TokenGenerator, tokenStorage core.TokenStorage) *API {
+	return &API{cfg: cfg, limiter: limiter, mailer: mailer, tokenGenerator: tokenGenerator, tokenStorage: tokenStorage}
 }
 
 // Routes returns app's router
@@ -31,6 +33,7 @@ func (a *API) Routes() *mux.Router {
 
 	r.HandleFunc("/api/health", a.handleHealthCheck).Methods("GET")
 	r.HandleFunc("/api/verify", a.handleVerifyEmail).Methods("POST")
+	r.HandleFunc("/api/done", a.handleVerifyDone).Methods("GET")
 	r.HandleFunc("/api/send", a.handleSendEmail).Methods("POST")
 
 	spa := spaHandler{StaticPath: "../frontend/build", IndexPath: "index.html", FileServer: http.FileServer(http.Dir("../frontend/build"))}
