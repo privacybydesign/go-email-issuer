@@ -2,7 +2,7 @@ name: Status checks
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
   schedule:
     # Run every monday on 9:00 in the morning (UTC).
@@ -12,16 +12,13 @@ on:
 
 jobs:
   build-frontend:
-    strategy:
-      matrix:
-        lang: [ en, nl ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: "18"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -40,10 +37,13 @@ jobs:
       - uses: actions/setup-go@v5
       - name: Check fmt
         working-directory: backend
-        run:  test -z $(gofmt -l .)
+        run: test -z $(gofmt -l .)
 
       - name: Install GolangCI-Lint
-        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.1.6
+        run:
+          curl -sSfL
+          https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
+          | sh -s -- -b $(go env GOPATH)/bin v2.1.6
 
       - name: Run linter
         working-directory: backend
@@ -76,7 +76,6 @@ jobs:
 
       - name: Run tests
         run: docker run email-issuer-tests
-
 
   build-docker-image:
     runs-on: ubuntu-latest
