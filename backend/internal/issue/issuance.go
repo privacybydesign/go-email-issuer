@@ -50,6 +50,7 @@ func (jc *DefaultJwtCreator) CreateJwt(email string) (string, error) {
 				jc.attributes.Email:       email,
 				jc.attributes.EmailDomain: email[strings.Index(email, "@")+1:],
 			},
+			SdJwtBatchSize: 200,
 		},
 	})
 
