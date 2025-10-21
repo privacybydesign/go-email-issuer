@@ -64,7 +64,6 @@ i18n
           done_header: "Email address added",
           thank_you: "Thank you for using Yivi, you can close this page now.",
           again: "Add another email address",
-          submit: "Submit",
         },
       },
       nl: {
@@ -122,7 +121,6 @@ i18n
           thank_you:
             "Bedankt voor het gebruik van Yivi, u kunt deze pagina nu sluiten.",
           again: "Nog een emailadres toevoegen",
-          submit: "Verzenden",
         },
       },
     },
