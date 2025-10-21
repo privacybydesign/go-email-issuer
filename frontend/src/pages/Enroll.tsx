@@ -182,11 +182,6 @@ export default function EnrollPage() {
                     onChange={(e) => setToken(e.target.value.toUpperCase())}
                     autoFocus
                   />
-                  <button
-                    className="hidden"
-                    id="submit-token"
-                    type="submit"
-                  ></button>
                 </>
               )}
               {hash && (
@@ -204,6 +199,9 @@ export default function EnrollPage() {
                 {t("back")}
               </Link>
             )}
+            <button type="submit" id="next-button">
+              {t("submit")}
+            </button>
           </div>
         </footer>
       </form>
