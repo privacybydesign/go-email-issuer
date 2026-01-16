@@ -143,9 +143,13 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "token generator not configured", http.StatusInternalServerError)
 		return
 	}
-	tok := a.tokenGenerator.GenerateToken()
+	tok, err := a.tokenGenerator.GenerateToken()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "error_generating_token")
+		return
+	}
 
-	err := a.tokenStorage.StoreToken(in.Email, tok)
+	err = a.tokenStorage.StoreToken(in.Email, tok)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "error_storing_token")
 		return
