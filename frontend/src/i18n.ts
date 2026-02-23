@@ -31,6 +31,7 @@ i18n
           confirm: "Confirm",
           error_email_format:
             "You did not enter a valid email address. Please check whether the email address is correct.",
+          error_email_format_lowercase: "Email address must be in lowercase.",
           error_internal:
             "Internal error. Please contact Yivi if this happens more often.",
           error_sending_email:
@@ -84,8 +85,9 @@ i18n
             "Controleer het emailadres nogmaals ter bevestiging. Kies 'Terug' om je emailadres te corrigeren.",
           back: "Terug",
           confirm: "Bevestigen",
-          error_email_address_format:
+          error_email_format:
             "Je hebt geen geldig emailadres ingevoerd. Controleer of het ingevoerde emailadres klopt.",
+          error_email_format_lowercase: "Emailadres moet in kleine letters zijn.",
           error_internal:
             "Interne fout. Neem contact op met Yivi als dit vaker voorkomt.",
           error_sending_email:
