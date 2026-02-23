@@ -3,11 +3,11 @@ package httpapi
 import (
 	"backend/internal/issue"
 	"backend/internal/mail"
+	"backend/internal/validators"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
-	netmail "net/mail"
 	"os"
 	"path/filepath"
 	"strings"
@@ -68,7 +68,6 @@ func (a *API) handleVerifyDone(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
-
 	// token is passed in the body as JSON from the frontend
 	var req struct {
 		Token string `json:"token"`
@@ -113,7 +112,6 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	if jserr != nil {
 		log.Printf("error: %s", jserr)
 	}
-
 }
 
 func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
@@ -123,13 +121,16 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var in input
-	if err := decodeJSON(w, r, &in); err != nil || in.Email == "" {
+	if err := decodeJSON(w, r, &in); err != nil {
 		writeError(w, http.StatusBadRequest, "email_required")
 		return
 	}
 
-	if _, err := netmail.ParseAddress(in.Email); err != nil {
-		writeError(w, http.StatusBadRequest, "error_email_format")
+	// Validate email address format
+	validator := validators.EmailValidator{}
+	valid, parsedAddress, errCode := validator.ParseAndValidateEmailAddress(in.Email)
+	if !valid {
+		writeError(w, http.StatusBadRequest, *errCode)
 		return
 	}
 
@@ -149,13 +150,14 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = a.tokenStorage.StoreToken(in.Email, tok)
+	// Make sure we use the parsed email address from the validator, to ensure that we e.g. trim any whitespace and remove any full name from the RFC-5322 format
+	err = a.tokenStorage.StoreToken(*parsedAddress, tok)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "error_storing_token")
 		return
 	}
 	baseURL := strings.TrimSuffix(a.cfg.App.BaseURL, "/")
-	verifyURL := fmt.Sprintf("%s/%s/enroll#verify:%s:%s", baseURL, in.Language, in.Email, tok)
+	verifyURL := fmt.Sprintf("%s/%s/enroll#verify:%s:%s", baseURL, in.Language, *parsedAddress, tok)
 
 	tmplStr, err := mail.RenderHTMLtemplate(mailTmpl.TemplateDir, verifyURL, tok)
 
@@ -164,6 +166,7 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// For sending the email, we can used the unparsed email address from the input, since the mailer will use the parsed email address from the validator as the "To" address. This allows us to e.g. keep the full name in the "To" field if the user provided an RFC-5322 formatted email address.
 	emData := mail.Email{From: a.cfg.Mail.From, To: in.Email,
 		Subject: mailTmpl.Subject,
 		Body:    tmplStr,
@@ -172,7 +175,7 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 	// rate limit for sending emails
 	if a.limiter != nil {
 		ip := clientIP(r)
-		allow, _ := a.limiter.Allow(ip, in.Email)
+		allow, _ := a.limiter.Allow(ip, *parsedAddress)
 		if !allow {
 			writeError(w, http.StatusTooManyRequests, "error_ratelimit")
 			return

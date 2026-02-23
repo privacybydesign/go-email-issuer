@@ -18,5 +18,4 @@ func TestCreatingJwt(t *testing.T) {
 
 	require.NoError(t, err, "Failed to create the jwt for the given email")
 	require.NotEmpty(t, jwt, "jwt should not be empty")
-
 }

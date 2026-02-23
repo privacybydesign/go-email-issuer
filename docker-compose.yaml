@@ -1,25 +1,69 @@
 services:
+
+  irmaserver:
+    image: ghcr.io/privacybydesign/irma:v0.19.1
+    ports:
+      - 8088:8088
+    expose:
+      - 8088
+    networks:
+      irma-net:
+        aliases:
+          - is.localhost
+    entrypoint:
+      - "irma"
+      - "server"
+      - "--no-auth=false"
+      - "--requestors={\"email_issuer\":{\"auth_method\":\"publickey\",\"key_file\": \"/config/public_key.pem\"} }"
+      - "--port=8088"
+      - "--url=http://${IP}:8088"
+      #- "--jwt-privkey-file=/config/sk.pem"
+    volumes:
+      - ./backend/internal/issue/keys/:/config/
+
   go-email-issuer:
     build:
       context: .
       dockerfile: Dockerfile
-
     container_name: go-email-issuer
     ports:
       - "8080:8080"
     volumes:
       - ./internal/issue/keys/:/internal/issue/keys/
+      - ./backend/config.json:/config/config.json
     restart: unless-stopped
-    network_mode: host
+    entrypoint: ["/app/backend/bin/server", "-config", "/config/config.json"]
+    networks:
+      irma-net:
+        aliases:
+          - email-issuer.localhost
+
   redis:
     image: "bitnami/redis:latest"
     container_name: redis
     environment:
       - REDIS_PASSWORD=password
       - REDIS_PORT_NUMBER=6379
-    volumes:
-      - redis_data:/data
-    network_mode: host
+    # volumes:
+    #   - redis_data:/bitnami/redis/data
+    networks:
+      irma-net:
+        aliases:
+            - redis.localhost
+
+  mailhog:
+    image: mailhog/mailhog
+    networks:
+      irma-net:
+        aliases:
+          - mailhog.localhost
+    ports:
+      - 1025:1025
+      - 8025:8025 # Port of the web interface
 
 volumes:
   redis_data:
+
+networks:
+  irma-net:
+    driver: bridge

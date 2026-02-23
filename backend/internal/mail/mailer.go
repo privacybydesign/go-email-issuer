@@ -29,7 +29,6 @@ func NewSmtpMailer(mcfg *config.MailConfig) *SmtpMailer {
 }
 
 func (sm SmtpMailer) SendEmail(e Email) error {
-
 	gm := gomail.NewMessage()
 	gm.SetHeader("From", e.From)
 	gm.SetHeader("To", e.To)
@@ -41,7 +40,6 @@ func (sm SmtpMailer) SendEmail(e Email) error {
 	}
 
 	return nil
-
 }
 
 type DummyMailer struct{}

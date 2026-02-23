@@ -28,7 +28,6 @@ func NewAPI(cfg *config.Config, limiter *core.TotalRateLimiter, mailer mail.Mail
 // Routes returns app's router
 
 func (a *API) Routes() *mux.Router {
-
 	r := mux.NewRouter()
 
 	r.HandleFunc("/api/health", a.handleHealthCheck).Methods("GET")
@@ -56,7 +55,6 @@ func writeJSON(w http.ResponseWriter, code int, v any) error {
 		return err
 	}
 	return nil
-
 }
 
 func writeError(w http.ResponseWriter, code int, msg string) {
@@ -80,5 +78,4 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 		return errors.New("body must contain a single JSON object")
 	}
 	return nil
-
 }
