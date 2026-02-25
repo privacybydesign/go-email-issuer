@@ -15,12 +15,12 @@ RUN make build
 
 # -----------------------------------------------------
 
-FROM golang:1.24 AS runtime
+FROM debian:trixie-slim AS runtime
 
 WORKDIR /app/backend
 
-COPY --from=backend-build /app/backend/ /app/backend
 COPY --from=frontend-build /app/frontend/build/ /app/frontend/build
+COPY --from=backend-build /app/backend/ /app/backend
 
 
 EXPOSE 8080
