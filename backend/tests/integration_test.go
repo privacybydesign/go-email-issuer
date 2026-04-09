@@ -138,6 +138,18 @@ func TestSendEmailHappyPath(t *testing.T) {
 	}
 
 }
+func TestSendAndVerifyWithUppercaseEmail(t *testing.T) {
+	uppercaseEmail := "Test@Email.Com"
+
+	resp := makeSendEmailRequest(t, uppercaseEmail, "en")
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	// Verify using the same uppercase email — should match via normalization
+	res := makeVerifyEmailRequest(t, testToken, uppercaseEmail)
+	resBody := readResponseBody(t, res)
+	require.Equalf(t, http.StatusOK, res.StatusCode, "body: %v", resBody)
+}
+
 func TestSendEmailEmptyData(t *testing.T) {
 
 	res := makeSendEmailRequest(t, "", "en")

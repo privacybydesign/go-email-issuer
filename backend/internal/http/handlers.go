@@ -59,7 +59,14 @@ func (a *API) handleVerifyDone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	remove_err := a.tokenStorage.RemoveToken(req.Email)
+	validator := validators.EmailValidator{}
+	valid, parsedAddress, errCode := validator.ParseAndValidateEmailAddress(req.Email)
+	if !valid {
+		writeError(w, http.StatusBadRequest, *errCode)
+		return
+	}
+
+	remove_err := a.tokenStorage.RemoveToken(*parsedAddress)
 	if remove_err != nil {
 		writeError(w, http.StatusInternalServerError, "error_removing_token")
 		return
@@ -78,11 +85,19 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "token_or_email_required")
 		return
 	}
+	// Validate and normalize the email address
+	validator := validators.EmailValidator{}
+	valid, parsedAddress, errCode := validator.ParseAndValidateEmailAddress(req.Email)
+	if !valid {
+		writeError(w, http.StatusBadRequest, *errCode)
+		return
+	}
+
 	if a.tokenStorage == nil {
 		http.Error(w, "token generator not configured", http.StatusInternalServerError)
 		return
 	}
-	expectedToken, retrieve_err := a.tokenStorage.RetrieveToken(req.Email)
+	expectedToken, retrieve_err := a.tokenStorage.RetrieveToken(*parsedAddress)
 	if retrieve_err != nil {
 		writeError(w, http.StatusBadRequest, "error_token_invalid")
 		return
@@ -99,7 +114,7 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwt, create_err := jwtCreator.CreateJwt(req.Email)
+	jwt, create_err := jwtCreator.CreateJwt(*parsedAddress)
 	if create_err != nil {
 		writeError(w, http.StatusInternalServerError, "jwt_creation_error")
 		return
