@@ -60,7 +60,7 @@ jobs:
 
 
       - name: Scan Image
-        uses: anchore/scan-action@v3
+        uses: anchore/scan-action@v5
         id: scan
         with:
           image: local/go-email-issuer:scan
