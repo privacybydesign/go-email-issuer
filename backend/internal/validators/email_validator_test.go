@@ -62,23 +62,26 @@ func Test_ParseAndValidateEmailAddress_Given_EmailAddressesWithQuotesOrIpDomains
 	}
 }
 
-func Test_ParseAndValidateEmailAddress_Given_AddressWithUppercase_Should_ReturnError(t *testing.T) {
+func Test_ParseAndValidateEmailAddress_Given_AddressWithUppercase_Should_NormalizeToLowercase(t *testing.T) {
 	ev := EmailValidator{}
 
-	testCases := []string{
-		"John Doe <John.Doe@Example.com>", // full name with angle brackets
-		"   John.Doe@Example.com",         // leading whitespaces
-		"\t\tJohn.Doe@Example.com",        // leading tabs
-		"John.Doe@Example.com   ",         // trailing whitespaces
-		"John.Doe@Example.com\t",          // trailing tabs
-		"John.Doe+tag@Example.com",        // with plus tag
+	testCases := []struct {
+		input    string
+		expected string
+	}{
+		{"John Doe <John.Doe@Example.com>", "john.doe@example.com"},
+		{"   John.Doe@Example.com", "john.doe@example.com"},
+		{"\t\tJohn.Doe@Example.com", "john.doe@example.com"},
+		{"John.Doe@Example.com   ", "john.doe@example.com"},
+		{"John.Doe@Example.com\t", "john.doe@example.com"},
+		{"John.Doe+tag@Example.com", "john.doe+tag@example.com"},
 	}
 
 	for _, tc := range testCases {
-		valid, parsedAddress, err := ev.ParseAndValidateEmailAddress(tc)
+		valid, parsedAddress, err := ev.ParseAndValidateEmailAddress(tc.input)
 
-		require.False(t, valid)
-		require.Nil(t, parsedAddress)
-		require.Equal(t, "error_email_format_lowercase", *err)
+		require.True(t, valid)
+		require.Nil(t, err)
+		require.Equal(t, tc.expected, *parsedAddress)
 	}
 }
