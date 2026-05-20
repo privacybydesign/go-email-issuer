@@ -12,7 +12,7 @@ func RenderHTMLtemplate(dir string, link string, token string) (string, error) {
 		return "", err
 	}
 	var buf bytes.Buffer
-	err = tmpl.Execute(&buf, map[string]interface{}{
+	err = tmpl.Execute(&buf, map[string]any{
 		"Link":  link,
 		"Token": token,
 	})
