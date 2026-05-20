@@ -7,7 +7,7 @@ RUN npm run build
 
 # -----------------------------------------------------
 
-FROM golang:1.24 AS backend-build
+FROM golang:1.26 AS backend-build
 
 WORKDIR /app/backend
 COPY backend .
@@ -15,7 +15,7 @@ RUN make build
 
 # -----------------------------------------------------
 
-FROM golang:1.24 AS runtime
+FROM golang:1.26 AS runtime
 
 WORKDIR /app/backend
 
