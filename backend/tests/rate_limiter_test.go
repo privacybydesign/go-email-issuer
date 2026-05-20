@@ -14,7 +14,7 @@ func TestRateLimiterWithSameIPandEmail(t *testing.T) {
 	email := "test@email.com"
 
 	// First 5 should pass
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		allow, _ := rl.Allow(ip, email)
 		if !allow {
 			t.Fatalf("unexpected fail at attempt %d", i+1)
@@ -65,7 +65,7 @@ func TestRateLimiterWindowReset(t *testing.T) {
 	ip := "0.0.0.0"
 	email := "test@email.com"
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		rl.Allow(ip, email)
 	}
 
