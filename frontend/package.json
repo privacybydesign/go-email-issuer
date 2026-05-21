@@ -13,7 +13,7 @@
     "i18next-browser-languagedetector": "^8.1.0",
     "intl-tel-input": "^25.3.1",
     "js-cookie": "^3.0.5",
-    "jwt-decode": "^3.1.2",
+    "jwt-decode": "^4.0.0",
     "libphonenumber-js": "^1.12.9",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
