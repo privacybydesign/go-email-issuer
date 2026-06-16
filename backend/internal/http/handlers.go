@@ -120,6 +120,15 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// The verification code is single-use: once it has been successfully
+	// redeemed (i.e. a JWT was issued for it), invalidate it so it cannot be
+	// used again. If we cannot invalidate it we must not hand out the JWT,
+	// otherwise the code would remain reusable until it expires.
+	if remove_err := a.tokenStorage.RemoveToken(*parsedAddress); remove_err != nil {
+		writeError(w, http.StatusInternalServerError, "error_invalidating_token")
+		return
+	}
+
 	jserr := writeJSON(w, http.StatusOK, map[string]any{
 		"jwt":             jwt,
 		"irma_server_url": a.cfg.JWT.IRMAServerURL,
