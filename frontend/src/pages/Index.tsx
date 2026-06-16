@@ -5,7 +5,10 @@ import { useAppContext } from "../AppContext";
 
 type ParsedEmail = { isValid: () => boolean };
 const parseEmail = (input: string): ParsedEmail => ({
-  isValid: () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input),
+  // Require a TLD of at least two characters so typos such as "gmail.c" are
+  // caught client-side. Domains that don't actually exist (e.g. "gemail.com")
+  // can only be detected server-side via a DNS check.
+  isValid: () => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(input),
 });
 
 const isEmailValid = (input: string) => {
