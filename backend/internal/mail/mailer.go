@@ -39,7 +39,7 @@ func (sm SmtpMailer) SendEmail(e Email) error {
 		log.Printf("error: %s", err)
 	}
 
-	return nil
+	return err
 }
 
 type DummyMailer struct{}
