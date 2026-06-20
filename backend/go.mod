@@ -5,6 +5,7 @@ go 1.26.0
 toolchain go1.26.2
 
 require (
+	github.com/alicebob/miniredis/v2 v2.38.0
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	gopkg.in/mail.v2 v2.3.1
 )
@@ -75,6 +76,7 @@ require (
 	github.com/valyala/fastjson v1.6.10 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.etcd.io/bbolt v1.4.3 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/crypto v0.53.0 // indirect
