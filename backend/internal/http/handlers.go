@@ -156,6 +156,14 @@ func (a *API) handleVerifyLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Invalidate the link token immediately so the verification link is
+	// single-use and cannot be replayed (it is a bearer credential carried in
+	// a URL that may linger in history, logs, or the Referer header). A failure
+	// here must not block the legitimate user, so we only log it.
+	if remove_err := a.tokenStorage.RemoveLinkToken(req.LinkToken); remove_err != nil {
+		log.Printf("warning: failed to invalidate link token after use: %s", remove_err)
+	}
+
 	// Re-validate and normalize the stored email defensively.
 	validator := validators.EmailValidator{}
 	valid, parsedAddress, errCode := validator.ParseAndValidateEmailAddress(email)

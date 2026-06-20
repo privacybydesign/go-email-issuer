@@ -187,6 +187,26 @@ func TestVerifyLinkHappyPath(t *testing.T) {
 	require.NotEmpty(t, resBody["irma_server_url"])
 }
 
+// TestVerifyLinkTokenIsSingleUse guards against replay: the opaque link token is
+// a bearer credential carried in a URL (which may linger in browser history,
+// logs, or a Referer header), so a second verification with the same token must
+// fail rather than succeed again (issue #44 follow-up).
+func TestVerifyLinkTokenIsSingleUse(t *testing.T) {
+	linkToken := "opaque-link-token-single-use"
+	require.NoError(t, testTokenStorage.StoreLinkToken(linkToken, testemail))
+
+	// First use succeeds.
+	first := makeVerifyLinkRequest(t, linkToken)
+	require.Equal(t, http.StatusOK, first.StatusCode)
+
+	// Second use of the same token is rejected — it was invalidated on first use.
+	second := makeVerifyLinkRequest(t, linkToken)
+	require.Equal(t, http.StatusBadRequest, second.StatusCode)
+
+	resBody := readResponseBody(t, second)
+	require.Equal(t, "error_token_invalid", resBody["error"])
+}
+
 func TestVerifyLinkUnknownTokenFails(t *testing.T) {
 	res := makeVerifyLinkRequest(t, "this-token-was-never-stored")
 	require.Equal(t, http.StatusBadRequest, res.StatusCode)
