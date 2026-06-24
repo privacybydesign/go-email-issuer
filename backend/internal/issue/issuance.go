@@ -3,7 +3,6 @@ package issue
 import (
 	"backend/internal/config"
 	"crypto/rsa"
-	"os"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -15,14 +14,7 @@ type JwtCreator interface {
 }
 
 func NewIrmaJwtCreator(cfg config.JWTConfig) (*DefaultJwtCreator, error) {
-	keyBytes, err := os.ReadFile(cfg.PrivateKeyPath)
-
-	if err != nil {
-		return nil, err
-	}
-
-	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(keyBytes)
-
+	privateKey, err := config.LoadRSAPrivateKey(cfg.PrivateKeyPath)
 	if err != nil {
 		return nil, err
 	}
