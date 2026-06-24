@@ -70,6 +70,16 @@ func TestValidateValidRSAKey(t *testing.T) {
 	}
 }
 
+func TestValidateEmptyKeyPath(t *testing.T) {
+	err := validate(baseConfig(""))
+	if err == nil {
+		t.Fatal("expected validation to fail for empty private key path, got nil")
+	}
+	if !strings.Contains(err.Error(), "PRIVATE_KEY_PATH is required") {
+		t.Fatalf("expected PRIVATE_KEY_PATH required error, got: %v", err)
+	}
+}
+
 func TestValidateEmptyKeyFile(t *testing.T) {
 	path := writeTempFile(t, "empty.pem", nil)
 	err := validate(baseConfig(path))

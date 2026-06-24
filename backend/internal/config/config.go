@@ -115,14 +115,19 @@ func validate(cfg *Config) error {
 	}
 
 	// Yivi issuance session JWT
-	if cfg.JWT.PrivateKeyPath != "" {
-		// Fully parse the key at startup so an empty, unreadable or
-		// non-RSA (e.g. ECDSA) key file fails fast with a clear error
-		// instead of only surfacing when the first issuance request
-		// is handled.
-		if _, err := LoadRSAPrivateKey(cfg.JWT.PrivateKeyPath); err != nil {
-			return err
-		}
+	//
+	// The private key is mandatory: every issuance request signs a JWT with
+	// it, so a missing path makes the service non-functional. Reject an empty
+	// path at startup rather than letting the service boot and 500 on the
+	// first issuance request.
+	if cfg.JWT.PrivateKeyPath == "" {
+		return errors.New("PRIVATE_KEY_PATH is required")
+	}
+	// Fully parse the key at startup so an unreadable or non-RSA (e.g. ECDSA)
+	// key file fails fast with a clear error instead of only surfacing when
+	// the first issuance request is handled.
+	if _, err := LoadRSAPrivateKey(cfg.JWT.PrivateKeyPath); err != nil {
+		return err
 	}
 	if cfg.JWT.IssuerID == "" {
 		return errors.New("ISSUER_ID is required")
