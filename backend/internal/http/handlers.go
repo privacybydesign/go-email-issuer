@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"backend/internal/core"
 	"backend/internal/issue"
 	"backend/internal/mail"
 	"backend/internal/validators"
@@ -129,6 +130,70 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// handleVerifyLink verifies an email address from an opaque link token embedded
+// in the verification link. The email is looked up server-side from the token,
+// so it is never carried in the URL. On success it returns the issuance JWT and
+// the resolved email address (the latter only in the POST response body, never
+// in a URL) so the frontend can finish issuance and clean up the code.
+func (a *API) handleVerifyLink(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		LinkToken string `json:"link_token"`
+	}
+	decode_err := decodeJSON(w, r, &req)
+	if decode_err != nil || req.LinkToken == "" {
+		writeError(w, http.StatusBadRequest, "token_required")
+		return
+	}
+
+	if a.tokenStorage == nil {
+		http.Error(w, "token storage not configured", http.StatusInternalServerError)
+		return
+	}
+
+	email, retrieve_err := a.tokenStorage.RetrieveEmailByLinkToken(req.LinkToken)
+	if retrieve_err != nil {
+		writeError(w, http.StatusBadRequest, "error_token_invalid")
+		return
+	}
+
+	// Invalidate the link token immediately so the verification link is
+	// single-use and cannot be replayed (it is a bearer credential carried in
+	// a URL that may linger in history, logs, or the Referer header). A failure
+	// here must not block the legitimate user, so we only log it.
+	if remove_err := a.tokenStorage.RemoveLinkToken(req.LinkToken); remove_err != nil {
+		log.Printf("warning: failed to invalidate link token after use: %s", remove_err)
+	}
+
+	// Re-validate and normalize the stored email defensively.
+	validator := validators.EmailValidator{}
+	valid, parsedAddress, errCode := validator.ParseAndValidateEmailAddress(email)
+	if !valid {
+		writeError(w, http.StatusBadRequest, *errCode)
+		return
+	}
+
+	jwtCreator, creator_err := issue.NewIrmaJwtCreator(a.cfg.JWT)
+	if creator_err != nil {
+		writeError(w, http.StatusInternalServerError, "jwt_creator_error")
+		return
+	}
+
+	jwt, create_err := jwtCreator.CreateJwt(*parsedAddress)
+	if create_err != nil {
+		writeError(w, http.StatusInternalServerError, "jwt_creation_error")
+		return
+	}
+
+	jserr := writeJSON(w, http.StatusOK, map[string]any{
+		"jwt":             jwt,
+		"irma_server_url": a.cfg.JWT.IRMAServerURL,
+		"email":           *parsedAddress,
+	})
+	if jserr != nil {
+		log.Printf("error: %s", jserr)
+	}
+}
+
 func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 	type input struct {
 		Email    string `json:"email"`
@@ -171,8 +236,23 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "error_storing_token")
 		return
 	}
+
+	// Generate an opaque link token and store a reverse mapping to the email
+	// address. The verification link carries only this token; the email is
+	// resolved server-side, so it never appears in the URL (and therefore not
+	// in browser history, server logs, or the Referer header) — see issue #44.
+	linkTok, err := core.GenerateLinkToken()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "error_generating_token")
+		return
+	}
+	if err = a.tokenStorage.StoreLinkToken(linkTok, *parsedAddress); err != nil {
+		writeError(w, http.StatusInternalServerError, "error_storing_token")
+		return
+	}
+
 	baseURL := strings.TrimSuffix(a.cfg.App.BaseURL, "/")
-	verifyURL := fmt.Sprintf("%s/%s/enroll#verify:%s:%s", baseURL, in.Language, *parsedAddress, tok)
+	verifyURL := fmt.Sprintf("%s/%s/enroll#token:%s", baseURL, in.Language, linkTok)
 
 	tmplStr, err := mail.RenderHTMLtemplate(mailTmpl.TemplateDir, verifyURL, tok)
 

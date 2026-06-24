@@ -41,6 +41,7 @@ i18n
           error_link_expired:
             "The verification link has expired. Please start the process again.",
           error_token_invalid: "The verification code is invalid.",
+          token_required: "No verification token was provided.",
           verify: "Verify",
           receive_email: "You will receive an email from Yivi.",
           steps: "Take the following steps:",
@@ -97,6 +98,7 @@ i18n
           error_link_expired:
             "De verificatielink is verlopen. Start het proces opnieuw.",
           error_token_invalid: "De verificatiecode is ongeldig.",
+          token_required: "Er is geen verificatietoken meegegeven.",
           verify: "Verifiëren",
           receive_email: "Je ontvangt een email van Yivi.",
           steps: "Doorloop de volgende stappen:",

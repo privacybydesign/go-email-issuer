@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 type VerifyResponse = {
   jwt: string;
   irma_server_url: string;
+  // Only present on the verification-link flow: the email is resolved
+  // server-side from the opaque token and returned here so issuance can finish.
+  email?: string;
 };
 
 export default function EnrollPage() {
@@ -28,7 +31,63 @@ export default function EnrollPage() {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
-  // user clicks the link in the email to verify and start the issuance
+  // Launch the Yivi issuance popup for a verified email and clean up afterwards.
+  const startIssuance = (res: VerifyResponse, emailForCleanup: string) => {
+    import("@privacybydesign/yivi-frontend")
+      .then((yivi) => {
+        const issuance = yivi.newPopup({
+          language: i18n.language,
+          session: {
+            url: res.irma_server_url,
+            start: {
+              method: "POST",
+              headers: {
+                "Content-Type": "text/plain",
+              },
+              body: res.jwt,
+            },
+            result: false,
+          },
+        });
+        issuance
+          .start()
+          .then(() => {
+            setMessage(t("email_add_success"));
+            navigate(`/${i18n.language}/done`);
+          })
+          .catch((e: string) => {
+            if (e === "Aborted") {
+              setErrorMessage(t("email_add_cancel"));
+            } else {
+              setErrorMessage(t("email_add_error"));
+            }
+          });
+      })
+      .finally(() => {
+        fetch("/api/done", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email: emailForCleanup }),
+        });
+      });
+  };
+
+  const handleVerifyError = async (response: Response) => {
+    try {
+      const data = await response.json();
+      if (data.error) {
+        setErrorMessage(t(data.error));
+        return;
+      }
+    } catch {
+      // fall through to the generic error page
+    }
+    navigate(`/${i18n.language}/error`);
+  };
+
+  // Manual flow: the user types the 6-character code shown in the email.
   const VerifyAndStartIssuance = async (email: string, token: string) => {
     try {
       // send email and token to verify endpoint to see if the token is valid for this email
@@ -44,60 +103,41 @@ export default function EnrollPage() {
       });
 
       if (response.ok) {
-        // Start enrollment process
         const res: VerifyResponse = await response.json();
-
-        import("@privacybydesign/yivi-frontend")
-          .then((yivi) => {
-            const issuance = yivi.newPopup({
-              language: i18n.language,
-              session: {
-                url: res.irma_server_url,
-                start: {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "text/plain",
-                  },
-                  body: res.jwt,
-                },
-                result: false,
-              },
-            });
-            issuance
-              .start()
-              .then(() => {
-                setMessage(t("email_add_success"));
-                navigate(`/${i18n.language}/done`);
-              })
-              .catch((e: string) => {
-                if (e === "Aborted") {
-                  setErrorMessage(t("email_add_cancel"));
-                } else {
-                  setErrorMessage(t("email_add_error"));
-                }
-              });
-          })
-          .finally(() => {
-            fetch("/api/done", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ email: email }),
-            });
-          });
-
+        startIssuance(res, email);
         return;
-      } else {
-        const data = await response.json();
-        let errorCode = data.error;
-
-        if (errorCode) {
-          setErrorMessage(t(errorCode));
-        } else {
-          navigate(`/${i18n.language}/error`);
-        }
       }
+      await handleVerifyError(response);
+    } catch (error) {
+      console.error(error);
+      navigate(`/${i18n.language}/error`);
+    }
+  };
+
+  // Link flow: the user clicks the verification link, which carries only an
+  // opaque token. The email is resolved server-side, so it never appears in the
+  // URL or browser history (issue #44).
+  const verifyLinkAndStartIssuance = async (linkToken: string) => {
+    try {
+      const response = await fetch("/api/verify-link", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          link_token: linkToken,
+        }),
+      });
+
+      if (response.ok) {
+        const res: VerifyResponse = await response.json();
+        if (res.email) {
+          setEmail(res.email);
+        }
+        startIssuance(res, res.email ?? "");
+        return;
+      }
+      await handleVerifyError(response);
     } catch (error) {
       console.error(error);
       navigate(`/${i18n.language}/error`);
@@ -118,15 +158,23 @@ export default function EnrollPage() {
 
   useEffect(() => {
     if (hash) {
-      const match = hash.match(/^#verify:([^:]+@[^\s:]+):(.+)$/);
+      const match = hash.match(/^#token:(.+)$/);
       if (!match) {
         navigate(`/${i18n.language}/error`);
         return;
       }
 
-      const email = match[1];
-      const token = match[2];
-      VerifyAndStartIssuance(email, token);
+      const linkToken = match[1];
+
+      // Strip the token from the URL immediately so this bearer credential is
+      // not persisted in browser history on shared/public devices (issue #44).
+      window.history.replaceState(
+        null,
+        document.title,
+        window.location.pathname + window.location.search
+      );
+
+      verifyLinkAndStartIssuance(linkToken);
     }
   }, [navigate, t, hash]);
 
