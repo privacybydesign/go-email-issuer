@@ -77,7 +77,7 @@ func TestResetRateLimitUnblocksEmail(t *testing.T) {
 
 	// Exhaust the per-email limit (10) across enough different IPs that the
 	// per-IP limit (5) is not what blocks us.
-	for i := 0; i < 11; i++ {
+	for i := range 11 {
 		limiter.Allow("198.51.100."+string(rune('0'+i%10)), email)
 	}
 	allow, _ := limiter.Allow("203.0.113.9", email)
@@ -98,7 +98,7 @@ func TestResetRateLimitNormalizesEmail(t *testing.T) {
 	// The limiter keys on the normalized (lowercase) address; the admin request
 	// uses a mixed-case form and must still hit the same entry.
 	email := "locked@example.com"
-	for i := 0; i < 11; i++ {
+	for i := range 11 {
 		limiter.Allow("198.51.100."+string(rune('0'+i%10)), email)
 	}
 	allow, _ := limiter.Allow("203.0.113.9", email)

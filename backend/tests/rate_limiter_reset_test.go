@@ -13,7 +13,7 @@ import (
 // exhaust calls Allow until it is rejected, failing the test if it never is.
 func exhaust(t *testing.T, rl core.RateLimiter, key string) {
 	t.Helper()
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		allow, _, err := rl.Allow(key)
 		require.NoError(t, err)
 		if !allow {
@@ -56,7 +56,7 @@ func TestTotalRateLimiterResetEmail(t *testing.T) {
 
 	// Exhaust the per-email limit (10) from many different IPs so the IP limit
 	// (5) is not what blocks us.
-	for i := 0; i < 11; i++ {
+	for i := range 11 {
 		rl.Allow("198.51.100."+string(rune('0'+i%10)), email)
 	}
 
@@ -114,7 +114,7 @@ func TestTotalRateLimiterResetEmailRedis(t *testing.T) {
 	rl := core.NewTotalRateLimiter(email, ip)
 
 	addr := "locked@example.com"
-	for i := 0; i < 6; i++ {
+	for range 6 {
 		rl.Allow("203.0.113.7", addr)
 	}
 
