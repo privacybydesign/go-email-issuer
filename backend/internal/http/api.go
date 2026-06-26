@@ -38,6 +38,8 @@ func (a *API) Routes() *mux.Router {
 	r.HandleFunc("/api/embedded/send", a.handleSendEmail).Methods("POST")
 	r.HandleFunc("/api/embedded/verify", a.handleVerifyEmail).Methods("POST")
 
+	r.HandleFunc("/api/admin/reset-rate-limit", a.handleResetRateLimit).Methods("POST")
+
 	spa := spaHandler{StaticPath: "../frontend/build", IndexPath: "index.html", FileServer: http.FileServer(http.Dir("../frontend/build"))}
 
 	r.PathPrefix("/").Handler(spa)

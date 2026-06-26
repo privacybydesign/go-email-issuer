@@ -45,6 +45,9 @@ type AppConfig struct {
 	TLSPrivKeyPath string         `json:"tls_priv_key_path,omitempty"`
 	TLSCertPath    string         `json:"tls_cert_path,omitempty"`
 	RateLimitCount map[string]int `json:"rate_limit_count"`
+	// AdminToken guards the admin endpoints (e.g. resetting a rate limit for an
+	// email address). When empty, those endpoints are disabled.
+	AdminToken string `json:"admin_token,omitempty"`
 }
 type MailTemplate struct {
 	Subject     string `json:"mail_subject"`
