@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
-	irma "github.com/privacybydesign/irmago"
+	"github.com/privacybydesign/irmago/irma"
 )
 
 type JwtCreator interface {
