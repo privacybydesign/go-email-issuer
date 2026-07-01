@@ -18,6 +18,11 @@ func buildTotalLimiter(cfg *config.Config) *core.TotalRateLimiter {
 	case "inmemory", "memory":
 		email := core.NewInMemoryRateLimiter(core.NewSystemClock(), emailPolicy)
 		ip := core.NewInMemoryRateLimiter(core.NewSystemClock(), ipPolicy)
+		// Periodically evict expired entries so the in-memory maps don't grow
+		// unbounded as new IPs/emails are seen. The limiters live for the
+		// process lifetime, so the stop functions are intentionally discarded.
+		email.StartJanitor(emailPolicy.Window)
+		ip.StartJanitor(ipPolicy.Window)
 		log.Print("Running in memory storage type for rate limiting")
 
 		return core.NewTotalRateLimiter(email, ip)
