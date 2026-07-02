@@ -1,8 +1,6 @@
 module backend
 
-go 1.26.0
-
-toolchain go1.26.2
+go 1.26.4
 
 require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
