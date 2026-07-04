@@ -123,3 +123,32 @@ func TestLoadRSAPrivateKeyValid(t *testing.T) {
 		t.Fatal("expected non-nil RSA key")
 	}
 }
+
+func TestParseTrustedProxies(t *testing.T) {
+	nets, err := ParseTrustedProxies([]string{"10.0.0.0/8", "192.0.2.1", "  ", "2001:db8::/32"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(nets) != 3 {
+		t.Fatalf("expected 3 parsed networks (empty entry skipped), got %d", len(nets))
+	}
+}
+
+func TestParseTrustedProxiesInvalid(t *testing.T) {
+	if _, err := ParseTrustedProxies([]string{"not-a-cidr"}); err == nil {
+		t.Fatal("expected error for malformed CIDR, got nil")
+	}
+}
+
+func TestValidateInvalidTrustedProxies(t *testing.T) {
+	path := writeTempFile(t, "priv.pem", validRSAKeyPEM(t))
+	cfg := baseConfig(path)
+	cfg.App.TrustedProxies = []string{"garbage"}
+	err := validate(cfg)
+	if err == nil {
+		t.Fatal("expected validation to fail for invalid trusted proxy, got nil")
+	}
+	if !strings.Contains(err.Error(), "invalid trusted proxy CIDR") {
+		t.Fatalf("expected descriptive trusted-proxy error, got: %v", err)
+	}
+}

@@ -189,7 +189,7 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 
 	// rate limit for sending emails
 	if a.limiter != nil {
-		ip := clientIP(r)
+		ip := a.clientIP(r)
 		allow, _ := a.limiter.Allow(ip, *parsedAddress)
 		if !allow {
 			writeError(w, http.StatusTooManyRequests, "error_ratelimit")
@@ -212,17 +212,63 @@ func (a *API) handleSendEmail(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func clientIP(r *http.Request) string {
-	if xf := r.Header.Get("X-Forwarded-For"); xf != "" {
-		parts := strings.Split(xf, ",")
-		return strings.TrimSpace(parts[0])
-	}
-	if cf := r.Header.Get("CF-Connecting-IP"); cf != "" {
-		return cf
-	}
+// clientIP determines the originating client's IP address for rate-limiting.
+//
+// Proxy-supplied headers (X-Forwarded-For, CF-Connecting-IP) can be set to any
+// value by an HTTP client, so trusting them unconditionally lets a caller spoof
+// their IP and bypass the IP-based rate limit. We therefore only consult those
+// headers when the immediate peer (the TCP connection's remote address) is a
+// configured trusted proxy. Otherwise, and whenever the headers yield no usable
+// address, we fall back to the connection's remote address.
+func (a *API) clientIP(r *http.Request) string {
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err == nil {
+	if err != nil {
+		host = r.RemoteAddr
+	}
+
+	peerIP := net.ParseIP(host)
+	if peerIP == nil || !a.isTrustedProxy(peerIP) {
+		// The direct peer is not a trusted proxy: ignore proxy headers.
 		return host
 	}
-	return r.RemoteAddr
+
+	// CF-Connecting-IP holds the single originating client IP set by Cloudflare.
+	if cf := strings.TrimSpace(r.Header.Get("CF-Connecting-IP")); cf != "" {
+		if net.ParseIP(cf) != nil {
+			return cf
+		}
+	}
+
+	// X-Forwarded-For is a comma-separated chain "client, proxy1, proxy2, ...".
+	// Walk it right-to-left and return the first address that is not itself a
+	// trusted proxy. That is the closest we can get to the real client while
+	// discarding any values a caller may have injected before the request
+	// reached our trusted proxies.
+	if xf := r.Header.Get("X-Forwarded-For"); xf != "" {
+		parts := strings.Split(xf, ",")
+		for i := len(parts) - 1; i >= 0; i-- {
+			ipStr := strings.TrimSpace(parts[i])
+			ip := net.ParseIP(ipStr)
+			if ip == nil {
+				continue
+			}
+			if a.isTrustedProxy(ip) {
+				continue
+			}
+			return ipStr
+		}
+	}
+
+	return host
+}
+
+// isTrustedProxy reports whether ip falls within one of the configured
+// trusted-proxy CIDR ranges.
+func (a *API) isTrustedProxy(ip net.IP) bool {
+	for _, network := range a.trustedProxies {
+		if network.Contains(ip) {
+			return true
+		}
+	}
+	return false
 }
