@@ -79,7 +79,8 @@ func (a *API) handleVerifyDone(w http.ResponseWriter, r *http.Request) {
 // address. It is meant for operators to unblock a user who locked themselves
 // out by mistake. Access requires the admin token configured in app.admin_token,
 // passed as "Authorization: Bearer <token>". When no admin token is configured
-// the endpoint is disabled.
+// the endpoint is disabled; when set, the token must meet the minimum length
+// enforced at startup (config.MinAdminTokenLength).
 func (a *API) handleResetRateLimit(w http.ResponseWriter, r *http.Request) {
 	if !a.authorizeAdmin(w, r) {
 		return
@@ -110,6 +111,10 @@ func (a *API) handleResetRateLimit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Audit trail: admin reset actions are privileged, so record who was
+	// unblocked and from where.
+	log.Printf("admin: rate limit reset for %q from %s", *parsedAddress, clientIP(r))
+
 	jserr := writeJSON(w, http.StatusOK, map[string]any{
 		"message": "rate_limit_reset",
 	})
@@ -130,6 +135,9 @@ func (a *API) authorizeAdmin(w http.ResponseWriter, r *http.Request) bool {
 
 	provided := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 	if subtle.ConstantTimeCompare([]byte(provided), []byte(configured)) != 1 {
+		// Log rejected attempts so repeated failures (e.g. token guessing)
+		// against this network-reachable route are visible in the logs.
+		log.Printf("admin: rejected request with invalid token from %s", clientIP(r))
 		writeError(w, http.StatusUnauthorized, "unauthorized")
 		return false
 	}
