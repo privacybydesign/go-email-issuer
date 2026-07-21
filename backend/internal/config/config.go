@@ -45,6 +45,9 @@ type AppConfig struct {
 	TLSPrivKeyPath string         `json:"tls_priv_key_path,omitempty"`
 	TLSCertPath    string         `json:"tls_cert_path,omitempty"`
 	RateLimitCount map[string]int `json:"rate_limit_count"`
+	// AdminToken guards the admin endpoints (e.g. resetting a rate limit for an
+	// email address). When empty, those endpoints are disabled.
+	AdminToken string `json:"admin_token,omitempty"`
 }
 type MailTemplate struct {
 	Subject     string `json:"mail_subject"`
@@ -132,8 +135,20 @@ func validate(cfg *Config) error {
 	if cfg.JWT.IssuerID == "" {
 		return errors.New("ISSUER_ID is required")
 	}
+
+	// Admin endpoints (optional). When a token is set it is the only credential
+	// guarding the admin routes, which sit on the same public router as the SPA.
+	// A short token is brute-forceable over the network, so reject a weak one at
+	// startup rather than accepting it silently.
+	if cfg.App.AdminToken != "" && len(cfg.App.AdminToken) < MinAdminTokenLength {
+		return fmt.Errorf("admin_token must be at least %d characters when set", MinAdminTokenLength)
+	}
 	return nil
 }
+
+// MinAdminTokenLength is the minimum length required for app.admin_token when
+// the admin endpoints are enabled.
+const MinAdminTokenLength = 16
 
 // LoadRSAPrivateKey reads and parses the PEM-encoded RSA private key at path.
 // It returns a descriptive error if the file cannot be read or does not

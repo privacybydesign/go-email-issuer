@@ -113,6 +113,37 @@ func TestValidateMissingKeyFile(t *testing.T) {
 	}
 }
 
+func TestValidateEmptyAdminTokenAllowed(t *testing.T) {
+	path := writeTempFile(t, "priv.pem", validRSAKeyPEM(t))
+	cfg := baseConfig(path)
+	cfg.App.AdminToken = ""
+	if err := validate(cfg); err != nil {
+		t.Fatalf("expected empty admin token to pass validation, got: %v", err)
+	}
+}
+
+func TestValidateShortAdminToken(t *testing.T) {
+	path := writeTempFile(t, "priv.pem", validRSAKeyPEM(t))
+	cfg := baseConfig(path)
+	cfg.App.AdminToken = strings.Repeat("a", MinAdminTokenLength-1)
+	err := validate(cfg)
+	if err == nil {
+		t.Fatal("expected validation to fail for a short admin token, got nil")
+	}
+	if !strings.Contains(err.Error(), "admin_token must be at least") {
+		t.Fatalf("expected admin_token length error, got: %v", err)
+	}
+}
+
+func TestValidateAdminTokenAtMinimumLength(t *testing.T) {
+	path := writeTempFile(t, "priv.pem", validRSAKeyPEM(t))
+	cfg := baseConfig(path)
+	cfg.App.AdminToken = strings.Repeat("a", MinAdminTokenLength)
+	if err := validate(cfg); err != nil {
+		t.Fatalf("expected a token at the minimum length to pass validation, got: %v", err)
+	}
+}
+
 func TestLoadRSAPrivateKeyValid(t *testing.T) {
 	path := writeTempFile(t, "priv.pem", validRSAKeyPEM(t))
 	key, err := LoadRSAPrivateKey(path)

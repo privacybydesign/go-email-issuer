@@ -13,6 +13,9 @@ import (
 // ----------- Abstract Rate Limiter Interface -----------
 type RateLimiter interface {
 	Allow(key string) (allow bool, timeout time.Duration, err error)
+	// Reset clears any recorded usage for key, so the next Allow starts a
+	// fresh window. Resetting a key that has no recorded usage is a no-op.
+	Reset(key string) error
 }
 
 type RateLimitingPolicy struct {
@@ -38,9 +41,12 @@ func NewTotalRateLimiter(email, ip RateLimiter) *TotalRateLimiter {
 	return &TotalRateLimiter{Email: email, IP: ip}
 }
 
+func emailKeyFor(email string) string { return fmt.Sprintf("email:%s", email) }
+func ipKeyFor(ip string) string       { return fmt.Sprintf("ip:%s", ip) }
+
 func (l *TotalRateLimiter) Allow(ip, email string) (allow bool, timeoutRemaining time.Duration) {
-	ipKey := fmt.Sprintf("ip:%s", ip)
-	emailKey := fmt.Sprintf("email:%s", email)
+	ipKey := ipKeyFor(ip)
+	emailKey := emailKeyFor(email)
 
 	allowEmail, timeRemainingEmail, err := l.Email.Allow(emailKey)
 	if err != nil {
@@ -56,6 +62,13 @@ func (l *TotalRateLimiter) Allow(ip, email string) (allow bool, timeoutRemaining
 		return false, maxDuration(timeRemainingIp, timeRemainingEmail)
 	}
 	return true, 0
+}
+
+// ResetEmail clears the rate-limit counter for a single email address, so a
+// user who locked themselves out can send again immediately. It only touches
+// the per-email limiter; the per-IP limiter is left untouched.
+func (l *TotalRateLimiter) ResetEmail(email string) error {
+	return l.Email.Reset(emailKeyFor(email))
 }
 
 // Redis rate limiter
@@ -105,6 +118,15 @@ func (r *RedisRateLimiter) Allow(key string) (bool, time.Duration, error) {
 	return true, 0, nil
 }
 
+func (r *RedisRateLimiter) Reset(key string) error {
+	key = fmt.Sprintf("%s:%s", r.namespace, key)
+	if err := r.rclient.Del(r.ctx, key).Err(); err != nil {
+		log.Printf("Redis Del failed: %v\n", err)
+		return err
+	}
+	return nil
+}
+
 // Memory rate limiter
 
 type InMemoryRateLimiter struct {
@@ -141,6 +163,13 @@ func (r *InMemoryRateLimiter) Allow(key string) (allow bool, timeout time.Durati
 	}
 	return true, 0, nil
 
+}
+
+func (r *InMemoryRateLimiter) Reset(key string) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	delete(r.memory, key)
+	return nil
 }
 
 func NewInMemoryRateLimiter(clock Clock, policy RateLimitingPolicy) *InMemoryRateLimiter {
