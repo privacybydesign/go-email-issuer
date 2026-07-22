@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAppContext } from "../AppContext";
 import i18n from "../i18n";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 type VerifyResponse = {
   jwt: string;
   irma_server_url: string;
@@ -22,6 +22,11 @@ export default function EnrollPage() {
   const hash = location.hash;
   const [token, setToken] = useState("");
   const { email, setEmail } = useAppContext();
+  // Guard against the link-verify effect firing more than once. The link token
+  // is single-use server-side, so a second run (e.g. React.StrictMode's
+  // double-invoke in dev) would fail with error_token_invalid and show a
+  // spurious error banner next to the launched Yivi popup.
+  const linkVerifyStarted = useRef(false);
 
   useEffect(() => {
     // only show the message if the user came from the validate page
@@ -158,6 +163,11 @@ export default function EnrollPage() {
 
   useEffect(() => {
     if (hash) {
+      if (linkVerifyStarted.current) {
+        return;
+      }
+      linkVerifyStarted.current = true;
+
       const match = hash.match(/^#token:(.+)$/);
       if (!match) {
         navigate(`/${i18n.language}/error`);
