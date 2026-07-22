@@ -107,7 +107,11 @@ func (r *RedisRateLimiter) Allow(key string) (bool, time.Duration, error) {
 		}
 	}
 
-	if count >= int64(r.policy.Limit) {
+	// Block once the window count exceeds the limit. This matches the
+	// in-memory backend (entry.Count > Limit): a policy of Limit=N allows N
+	// requests per window and blocks the (N+1)-th. Using > rather than >=
+	// keeps both backends in agreement when storage_type is switched.
+	if count > int64(r.policy.Limit) {
 		timeRemaining, err := r.rclient.TTL(r.ctx, key).Result()
 		if err != nil {
 			return false, 0, err
@@ -139,30 +143,78 @@ type InMemoryRateLimiter struct {
 func (r *InMemoryRateLimiter) Allow(key string) (allow bool, timeout time.Duration, err error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
+
+	now := r.clock.GetTime()
 	entry, exists := r.memory[key]
 
-	if !exists {
+	// Start a fresh window if the key is new or its window has already elapsed.
+	// Doing the reset here (rather than lazily, only once the limit was already
+	// exceeded) makes the current request count toward the new window and keeps
+	// the behaviour independent of whether the janitor has run yet.
+	if !exists || !entry.Expiry.After(now) {
 		entry = &RateLimiterEntry{
 			Count:  0,
-			Expiry: r.clock.GetTime().Add(r.policy.Window),
+			Expiry: now.Add(r.policy.Window),
 		}
 		r.memory[key] = entry
 	}
 
 	entry.Count += 1
 
+	// Block the (Limit+1)-th request within the window. This matches the Redis
+	// backend (count > Limit), so a policy of Limit=N allows N requests per
+	// window on both backends.
 	if entry.Count > r.policy.Limit {
-		timeUntilExpiry := entry.Expiry.Sub(r.clock.GetTime())
-
-		if timeUntilExpiry < 0 {
-			entry.Expiry = r.clock.GetTime().Add(r.policy.Window)
-			entry.Count = 0
-			return true, 0, nil
-		}
-		return false, timeUntilExpiry, nil
+		return false, entry.Expiry.Sub(now), nil
 	}
 	return true, 0, nil
 
+}
+
+// Cleanup evicts every entry whose window has already elapsed. Without it the
+// memory map grows unbounded, since each distinct key (ip:<addr> / email:<addr>)
+// adds an entry that is otherwise only ever overwritten, never removed. It is
+// safe for concurrent use; the janitor goroutine calls it periodically and tests
+// can call it directly to force deterministic eviction.
+func (r *InMemoryRateLimiter) Cleanup() {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	now := r.clock.GetTime()
+	for key, entry := range r.memory {
+		if !entry.Expiry.After(now) {
+			delete(r.memory, key)
+		}
+	}
+}
+
+// Len reports the number of tracked keys. Useful for observing memory growth and
+// eviction (primarily in tests).
+func (r *InMemoryRateLimiter) Len() int {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	return len(r.memory)
+}
+
+// StartJanitor launches a background goroutine that evicts expired entries every
+// interval, bounding memory use under churn. It returns a stop function that
+// terminates the goroutine. Production code starts it once at construction;
+// tests that need deterministic behaviour drive Cleanup directly instead.
+func (r *InMemoryRateLimiter) StartJanitor(interval time.Duration) (stop func()) {
+	ticker := time.NewTicker(interval)
+	done := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				r.Cleanup()
+			case <-done:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+	return func() { close(done) }
 }
 
 func (r *InMemoryRateLimiter) Reset(key string) error {
