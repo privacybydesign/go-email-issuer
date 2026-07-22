@@ -54,6 +54,51 @@ func TestGenerateToken_Properties(t *testing.T) {
 	}
 }
 
+func TestGenerateToken_FillUsesFullCharset(t *testing.T) {
+	// Regression test for the fill-loop entropy bug: the non-digit fill
+	// positions must draw from the full A-Z charset, not just A-J.
+	// Previously the bound was len(digits) (10), so charset[0..9] == "ABCDEFGHIJ"
+	// and the 16 letters K-Z were unreachable.
+	//
+	// Across many generations every uppercase letter (including K-Z) should
+	// appear. With ~2.5 fill positions per token and each letter having a
+	// ~1/36 chance per fill position, the expected count per letter over this
+	// many iterations is in the hundreds, so missing any letter is
+	// astronomically unlikely unless the charset is restricted again.
+	tg := NewRandomTokenGenerator()
+
+	const iterations = 10000
+	seenLetters := make(map[rune]struct{})
+	for range iterations {
+		token, err := tg.GenerateToken()
+		require.NoError(t, err)
+		for _, r := range token {
+			if r >= 'A' && r <= 'Z' {
+				seenLetters[r] = struct{}{}
+			}
+		}
+	}
+
+	// The crux of the regression: at least one K-Z letter must show up.
+	sawBackHalf := false
+	for r := 'K'; r <= 'Z'; r++ {
+		if _, ok := seenLetters[r]; ok {
+			sawBackHalf = true
+			break
+		}
+	}
+	if !sawBackHalf {
+		t.Fatalf("no letters from K-Z appeared in %d tokens; fill loop is restricted to a sub-range of the charset", iterations)
+	}
+
+	// Stronger guard: every uppercase letter A-Z should be reachable.
+	for r := 'A'; r <= 'Z'; r++ {
+		if _, ok := seenLetters[r]; !ok {
+			t.Fatalf("letter %q never appeared in %d tokens; charset is not fully reachable (seen %d of 26 letters)", string(r), iterations, len(seenLetters))
+		}
+	}
+}
+
 func TestGenerateToken_BasicUniquenessSanity(t *testing.T) {
 	// This is a sanity check, NOT a cryptographic test.
 	// It can theoretically fail by chance, but with these params it should be extremely unlikely.

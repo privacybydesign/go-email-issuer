@@ -10,7 +10,8 @@
       "email": 5,
       "ip": 5
     },
-    "trusted_proxies": ["10.0.0.0/8", "127.0.0.1"]
+    "trusted_proxies": ["10.0.0.0/8", "127.0.0.1"],
+    "admin_token": ""
   },
   "mail": {
     "mail_host": "your.smtp.host",
