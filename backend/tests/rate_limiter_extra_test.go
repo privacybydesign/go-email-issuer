@@ -18,7 +18,7 @@ func TestInMemoryRateLimiterEviction(t *testing.T) {
 	rl := core.NewInMemoryRateLimiter(clock, policy)
 
 	for i := range 100 {
-		rl.Allow(fmt.Sprintf("ip:%d", i))
+		_, _, _ = rl.Allow(fmt.Sprintf("ip:%d", i))
 	}
 	if got := rl.Len(); got != 100 {
 		t.Fatalf("expected 100 tracked keys, got %d", got)
@@ -88,8 +88,8 @@ func TestInMemoryWindowResetCountsCurrentRequest(t *testing.T) {
 	rl := core.NewInMemoryRateLimiter(clock, policy)
 
 	// Exhaust the first window: 2 allowed, 3rd blocked.
-	rl.Allow("key")
-	rl.Allow("key")
+	_, _, _ = rl.Allow("key")
+	_, _, _ = rl.Allow("key")
 	if allow, _, _ := rl.Allow("key"); allow {
 		t.Fatal("expected 3rd request to be blocked in the first window")
 	}
@@ -121,7 +121,7 @@ func TestRedisAndInMemoryAgreeOnThreshold(t *testing.T) {
 	defer mr.Close()
 
 	client := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	const limit = 5
 	policy := core.RateLimitingPolicy{Window: 30 * time.Minute, Limit: limit}
