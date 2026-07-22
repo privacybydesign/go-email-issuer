@@ -31,6 +31,8 @@ i18n
           confirm: "Confirm",
           error_email_format:
             "You did not enter a valid email address. Please check whether the email address is correct.",
+          error_email_unknown_domain:
+            "The domain of this email address does not seem to exist. Please check for typos (for example 'gmail.com' instead of 'gemail.com').",
           error_email_format_lowercase: "Email address must be in lowercase.",
           error_internal:
             "Internal error. Please contact Yivi if this happens more often.",
@@ -87,6 +89,8 @@ i18n
           confirm: "Bevestigen",
           error_email_format:
             "Je hebt geen geldig emailadres ingevoerd. Controleer of het ingevoerde emailadres klopt.",
+          error_email_unknown_domain:
+            "Het domein van dit emailadres lijkt niet te bestaan. Controleer op typefouten (bijvoorbeeld 'gmail.com' in plaats van 'gemail.com').",
           error_email_format_lowercase: "Emailadres moet in kleine letters zijn.",
           error_internal:
             "Interne fout. Neem contact op met Yivi als dit vaker voorkomt.",
