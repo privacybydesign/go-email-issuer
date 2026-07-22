@@ -9,7 +9,8 @@
     "rate_limit_count": {
       "email": 5,
       "ip": 5
-    }
+    },
+    "admin_token": ""
   },
   "mail": {
     "mail_host": "your.smtp.host",

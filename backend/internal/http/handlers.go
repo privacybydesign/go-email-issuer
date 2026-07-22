@@ -5,6 +5,7 @@ import (
 	"backend/internal/issue"
 	"backend/internal/mail"
 	"backend/internal/validators"
+	"crypto/subtle"
 	"fmt"
 	"log"
 	"net"
@@ -75,6 +76,75 @@ func (a *API) handleVerifyDone(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// handleResetRateLimit clears the rate-limit counter for a single email
+// address. It is meant for operators to unblock a user who locked themselves
+// out by mistake. Access requires the admin token configured in app.admin_token,
+// passed as "Authorization: Bearer <token>". When no admin token is configured
+// the endpoint is disabled; when set, the token must meet the minimum length
+// enforced at startup (config.MinAdminTokenLength).
+func (a *API) handleResetRateLimit(w http.ResponseWriter, r *http.Request) {
+	if !a.authorizeAdmin(w, r) {
+		return
+	}
+
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := decodeJSON(w, r, &req); err != nil || req.Email == "" {
+		writeError(w, http.StatusBadRequest, "email_required")
+		return
+	}
+
+	validator := validators.EmailValidator{}
+	valid, parsedAddress, errCode := validator.ParseAndValidateEmailAddress(req.Email)
+	if !valid {
+		writeError(w, http.StatusBadRequest, *errCode)
+		return
+	}
+
+	if a.limiter == nil {
+		writeError(w, http.StatusInternalServerError, "rate_limiter_not_configured")
+		return
+	}
+
+	if err := a.limiter.ResetEmail(*parsedAddress); err != nil {
+		writeError(w, http.StatusInternalServerError, "error_resetting_rate_limit")
+		return
+	}
+
+	// Audit trail: admin reset actions are privileged, so record who was
+	// unblocked and from where.
+	log.Printf("admin: rate limit reset for %q from %s", *parsedAddress, clientIP(r))
+
+	jserr := writeJSON(w, http.StatusOK, map[string]any{
+		"message": "rate_limit_reset",
+	})
+	if jserr != nil {
+		log.Printf("error: %s", jserr)
+	}
+}
+
+// authorizeAdmin checks the bearer token against the configured admin token in
+// constant time. It writes the appropriate error response and returns false
+// when the request is not authorized.
+func (a *API) authorizeAdmin(w http.ResponseWriter, r *http.Request) bool {
+	configured := a.cfg.App.AdminToken
+	if configured == "" {
+		writeError(w, http.StatusForbidden, "admin_endpoint_disabled")
+		return false
+	}
+
+	provided := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if subtle.ConstantTimeCompare([]byte(provided), []byte(configured)) != 1 {
+		// Log rejected attempts so repeated failures (e.g. token guessing)
+		// against this network-reachable route are visible in the logs.
+		log.Printf("admin: rejected request with invalid token from %s", clientIP(r))
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return false
+	}
+	return true
+}
+
 func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	// token is passed in the body as JSON from the frontend
 	var req struct {
@@ -118,6 +188,15 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	jwt, create_err := jwtCreator.CreateJwt(*parsedAddress)
 	if create_err != nil {
 		writeError(w, http.StatusInternalServerError, "jwt_creation_error")
+		return
+	}
+
+	// The verification code is single-use: once it has been successfully
+	// redeemed (i.e. a JWT was issued for it), invalidate it so it cannot be
+	// used again. If we cannot invalidate it we must not hand out the JWT,
+	// otherwise the code would remain reusable until it expires.
+	if remove_err := a.tokenStorage.RemoveToken(*parsedAddress); remove_err != nil {
+		writeError(w, http.StatusInternalServerError, "error_invalidating_token")
 		return
 	}
 

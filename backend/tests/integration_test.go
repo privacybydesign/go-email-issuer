@@ -126,6 +126,29 @@ func TestVerifyEmailHappyPath(t *testing.T) {
 
 }
 
+func TestVerificationCodeIsSingleUse(t *testing.T) {
+	const reuseEmail = "single-use@email.com"
+
+	tokenErr := testTokenStorage.StoreToken(reuseEmail, testToken)
+	require.NoError(t, tokenErr)
+
+	// First redemption succeeds and hands out a JWT.
+	firstRes := makeVerifyEmailRequest(t, testToken, reuseEmail)
+	firstBody := readResponseBody(t, firstRes)
+	require.Equalf(t, http.StatusOK, firstRes.StatusCode, "body: %v", firstBody)
+	require.NotEmpty(t, firstBody["jwt"])
+
+	// The token must have been invalidated, so reusing it is rejected.
+	secondRes := makeVerifyEmailRequest(t, testToken, reuseEmail)
+	secondBody := readResponseBody(t, secondRes)
+	require.Equalf(t, http.StatusBadRequest, secondRes.StatusCode, "body: %v", secondBody)
+	require.Equal(t, "error_token_invalid", secondBody["error"])
+
+	// And the token should no longer be present in storage.
+	_, retrieveErr := testTokenStorage.RetrieveToken(reuseEmail)
+	require.Error(t, retrieveErr)
+}
+
 func TestWrongTokenFails(t *testing.T) {
 	tokenErr := testTokenStorage.StoreToken(testemail, testToken)
 	require.NoError(t, tokenErr)
