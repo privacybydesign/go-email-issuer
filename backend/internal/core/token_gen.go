@@ -2,10 +2,28 @@ package core
 
 import (
 	crand "crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"math/big"
 )
+
+// linkTokenBytes is the number of random bytes used for a verification link
+// token. 32 bytes (256 bits) makes the token infeasible to guess.
+const linkTokenBytes = 32
+
+// GenerateLinkToken returns a long, opaque, URL-safe random token suitable for
+// embedding in a verification link. Unlike the short, human-typable
+// verification code, this token carries no user data: the backend maps it to an
+// email address server-side, so the email address never appears in the URL (and
+// therefore never in browser history, server logs, or the Referer header).
+func GenerateLinkToken() (string, error) {
+	b := make([]byte, linkTokenBytes)
+	if _, err := crand.Read(b); err != nil {
+		return "", fmt.Errorf("failed to generate link token: %w", err)
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
 
 type TokenGenerator interface {
 	GenerateToken() (string, error)
