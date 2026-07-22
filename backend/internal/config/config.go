@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/mail"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -45,6 +47,13 @@ type AppConfig struct {
 	TLSPrivKeyPath string         `json:"tls_priv_key_path,omitempty"`
 	TLSCertPath    string         `json:"tls_cert_path,omitempty"`
 	RateLimitCount map[string]int `json:"rate_limit_count"`
+	// TrustedProxies lists the CIDR ranges (or bare IP addresses) of reverse
+	// proxies that are allowed to set client-IP headers such as
+	// X-Forwarded-For and CF-Connecting-IP. Proxy headers are only trusted
+	// when the immediate peer (the TCP connection's remote address) falls
+	// within one of these ranges. When empty, proxy headers are never trusted
+	// and the connection's remote address is always used.
+	TrustedProxies []string `json:"trusted_proxies,omitempty"`
 	// AdminToken guards the admin endpoints (e.g. resetting a rate limit for an
 	// email address). When empty, those endpoints are disabled.
 	AdminToken string `json:"admin_token,omitempty"`
@@ -136,6 +145,12 @@ func validate(cfg *Config) error {
 		return errors.New("ISSUER_ID is required")
 	}
 
+	// Fail fast on a malformed trusted-proxy list rather than silently
+	// ignoring proxy headers at runtime.
+	if _, err := ParseTrustedProxies(cfg.App.TrustedProxies); err != nil {
+		return err
+	}
+
 	// Admin endpoints (optional). When a token is set it is the only credential
 	// guarding the admin routes, which sit on the same public router as the SPA.
 	// A short token is brute-forceable over the network, so reject a weak one at
@@ -144,6 +159,37 @@ func validate(cfg *Config) error {
 		return fmt.Errorf("admin_token must be at least %d characters when set", MinAdminTokenLength)
 	}
 	return nil
+}
+
+// ParseTrustedProxies converts the configured list of trusted-proxy entries
+// into parsed networks. Each entry may be a CIDR range (e.g. "10.0.0.0/8") or
+// a bare IP address (e.g. "192.0.2.1"), which is treated as a single-host
+// range. Empty entries are skipped. It returns an error describing the first
+// entry that cannot be parsed.
+func ParseTrustedProxies(cidrs []string) ([]*net.IPNet, error) {
+	nets := make([]*net.IPNet, 0, len(cidrs))
+	for _, entry := range cidrs {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		// Allow bare IP addresses by promoting them to a single-host CIDR.
+		if !strings.Contains(entry, "/") {
+			if ip := net.ParseIP(entry); ip != nil {
+				if ip.To4() != nil {
+					entry += "/32"
+				} else {
+					entry += "/128"
+				}
+			}
+		}
+		_, network, err := net.ParseCIDR(entry)
+		if err != nil {
+			return nil, fmt.Errorf("invalid trusted proxy CIDR %q: %w", entry, err)
+		}
+		nets = append(nets, network)
+	}
+	return nets, nil
 }
 
 // MinAdminTokenLength is the minimum length required for app.admin_token when

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"log"
+	"net"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -19,10 +20,19 @@ type API struct {
 	tokenGenerator core.TokenGenerator
 	tokenStorage   core.TokenStorage
 	mailer         mail.Mailer
+	// trustedProxies holds the parsed CIDR ranges of reverse proxies whose
+	// client-IP headers we are willing to trust. See config.TrustedProxies.
+	trustedProxies []*net.IPNet
 }
 
 func NewAPI(cfg *config.Config, limiter *core.TotalRateLimiter, mailer mail.Mailer, tokenGenerator core.TokenGenerator, tokenStorage core.TokenStorage) *API {
-	return &API{cfg: cfg, limiter: limiter, mailer: mailer, tokenGenerator: tokenGenerator, tokenStorage: tokenStorage}
+	trustedProxies, err := config.ParseTrustedProxies(cfg.App.TrustedProxies)
+	if err != nil {
+		// The config is validated at load time, so this should not happen; log
+		// and continue with proxy headers untrusted rather than crashing.
+		log.Printf("warning: ignoring trusted_proxies: %s", err)
+	}
+	return &API{cfg: cfg, limiter: limiter, mailer: mailer, tokenGenerator: tokenGenerator, tokenStorage: tokenStorage, trustedProxies: trustedProxies}
 }
 
 // Routes returns app's router
