@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -45,7 +46,15 @@ var (
 	testServer *httptest.Server
 )
 
-var testLimiter = newTestRateLimiter(&mockClock{})
+// testLimiter is deliberately generous: the shared test server handles many
+// send and verify calls across the whole suite from the same loopback IP, and
+// now that /api/verify is also rate limited those would otherwise accumulate
+// and trip a low limit. The throttle behaviour itself is exercised in dedicated
+// tests that build their own low-limit limiters (see TestVerifyEmailIsRateLimited).
+var testLimiter = core.NewTotalRateLimiter(
+	core.NewInMemoryRateLimiter(&mockClock{}, core.RateLimitingPolicy{Window: 30 * time.Minute, Limit: 1000}),
+	core.NewInMemoryRateLimiter(&mockClock{}, core.RateLimitingPolicy{Window: 30 * time.Minute, Limit: 1000}),
+)
 
 var testMailer = mail.DummyMailer{}
 var testToken = "TESTTK"
@@ -147,6 +156,53 @@ func TestVerificationCodeIsSingleUse(t *testing.T) {
 	// And the token should no longer be present in storage.
 	_, retrieveErr := testTokenStorage.RetrieveToken(reuseEmail)
 	require.Error(t, retrieveErr)
+}
+
+// TestVerifyEmailIsRateLimited is a regression guard for the brute-force
+// hardening of /api/verify. Without a rate limit an attacker who knows a target
+// address can hammer the endpoint with token guesses until one matches. After a
+// small number of attempts within the window the endpoint must reject further
+// guesses with 429 — before the token is even checked, so that even a request
+// carrying the correct token is blocked once the budget is spent.
+func TestVerifyEmailIsRateLimited(t *testing.T) {
+	const email = "brute-force@email.com"
+	const attemptLimit = 3
+
+	storage := core.NewInMemoryTokenStorage()
+	require.NoError(t, storage.StoreToken(email, testToken))
+
+	clock := &mockClock{time: time.Now()}
+	limiter := core.NewTotalRateLimiter(
+		core.NewInMemoryRateLimiter(clock, core.RateLimitingPolicy{Window: 30 * time.Minute, Limit: attemptLimit}),
+		core.NewInMemoryRateLimiter(clock, core.RateLimitingPolicy{Window: 30 * time.Minute, Limit: 1000}),
+	)
+	api := httpapi.NewAPI(testCfg, limiter, testMailer, &core.StaticTokenGenerator{Token: testToken}, storage)
+	srv := httptest.NewServer(api.Routes())
+	defer srv.Close()
+
+	verify := func(token string) *http.Response {
+		b, err := json.Marshal(map[string]string{"token": token, "email": email})
+		require.NoError(t, err)
+		resp, err := http.Post(srv.URL+"/api/verify", "application/json", bytes.NewBuffer(b))
+		require.NoError(t, err)
+		return resp
+	}
+
+	// Spend the per-email budget with wrong guesses. Each is rejected on the
+	// token check (400), not yet by the limiter.
+	for i := 0; i < attemptLimit; i++ {
+		resp := verify("WRONG1")
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		require.NoError(t, resp.Body.Close())
+	}
+
+	// The next attempt exceeds the budget and is blocked by the limiter before
+	// the token is checked, so even the correct token now yields 429 rather
+	// than a JWT.
+	blocked := verify(testToken)
+	require.Equal(t, http.StatusTooManyRequests, blocked.StatusCode)
+	blockedBody := readResponseBody(t, blocked)
+	require.Equal(t, "error_ratelimit", blockedBody["error"])
 }
 
 func TestWrongTokenFails(t *testing.T) {
