@@ -190,7 +190,7 @@ func TestVerifyEmailIsRateLimited(t *testing.T) {
 
 	// Spend the per-email budget with wrong guesses. Each is rejected on the
 	// token check (400), not yet by the limiter.
-	for i := 0; i < attemptLimit; i++ {
+	for range attemptLimit {
 		resp := verify("WRONG1")
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		require.NoError(t, resp.Body.Close())
