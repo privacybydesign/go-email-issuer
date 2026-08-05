@@ -164,6 +164,21 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Throttle verification attempts. The verification code is short, so an
+	// attacker who knows a target address could otherwise hammer this endpoint
+	// with guesses until one matches. Applying the same per-IP and per-email
+	// limiter that guards the send path bounds the number of guesses per window
+	// and keeps the code space out of reach. The check runs before the token is
+	// looked up so that guesses count regardless of the outcome.
+	if a.limiter != nil {
+		ip := a.clientIP(r)
+		allow, _ := a.limiter.Allow(ip, *parsedAddress)
+		if !allow {
+			writeError(w, http.StatusTooManyRequests, "error_ratelimit")
+			return
+		}
+	}
+
 	if a.tokenStorage == nil {
 		http.Error(w, "token generator not configured", http.StatusInternalServerError)
 		return
@@ -174,7 +189,11 @@ func (a *API) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if expectedToken != req.Token {
+	// Compare in constant time so the response does not leak, through its
+	// timing, how many leading characters of the guess were correct. A plain
+	// != short-circuits on the first differing byte, which is a timing oracle
+	// that would let an attacker recover the code one character at a time.
+	if subtle.ConstantTimeCompare([]byte(expectedToken), []byte(req.Token)) != 1 {
 		writeError(w, http.StatusBadRequest, "error_invalid_token")
 		return
 	}
