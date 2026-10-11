@@ -133,13 +133,16 @@
                             <p>Beste Yivi-gebruiker,</p>
                             <p>
                                 Bedankt voor het gebruiken van Yivi, jouw privacyvriendelijke identity wallet!<br />
-                                Je kunt je e-mailadres verifiëren door de volgende code in te voeren.
+                                Tik op de knop om je e-mailadres te bevestigen in de Yivi-app.
                             </p>
                         </td>
                     </tr>
                     <tr>
-                        <td class="code-container">
-                            <strong>{{.Token}}</strong>
+                        <td class="body-text">
+                            <a class="button" href="{{.AppLink}}">Open Yivi</a>
+                            <p>
+                                Lees je dit op een computer? Dan toont de link de code die je in Yivi op je telefoon invult.
+                            </p>
                         </td>
                     </tr>
                     <tr>
@@ -147,12 +150,12 @@
                             <table width="100%">
                                 <tr>
                                     <td class="alt-link">
-                                        Je kunt ook je e-mailadres met de onderstaande link verifiëren:<br />
+                                        Of open deze link:<br />
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 0px 24px 0px 16px; font-size: 18px; text-align: left;">
-                                        <a href="{{.Link}}" style="color:blue;">{{.Link}}</a>
+                                        <a href="{{.AppLink}}" style="color:blue;">{{.AppLink}}</a>
                                     </td>
                                 </tr>
                             </table>
