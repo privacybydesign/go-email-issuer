@@ -5,9 +5,10 @@ import (
 	"testing"
 )
 
-// The verification code travels in the fragment of the universal link, so it
-// never reaches a server log. The plain code stays in the e-mail for clients
-// that strip links.
+// The e-mail holds one link, as the "Open Yivi" button and spelled out below
+// it. The code travels in its fragment, so it never reaches a server log: on a
+// phone with Yivi the app fills it in, elsewhere open.yivi.app shows it. The
+// code itself is not in the text, so there is only one thing to do with it.
 func TestRenderHTMLtemplateAppLink(t *testing.T) {
 	const (
 		code    = "A1B2C3"
@@ -22,14 +23,17 @@ func TestRenderHTMLtemplateAppLink(t *testing.T) {
 				t.Fatalf("render failed: %v", err)
 			}
 
-			if !strings.Contains(body, `href="`+appLink+`"`) {
-				t.Errorf("expected an href to %q in the e-mail", appLink)
+			if got := strings.Count(body, `href="`+appLink+`"`); got != 2 {
+				t.Errorf("expected the button and the spelled out link to %q, found %d links", appLink, got)
 			}
-			if !strings.Contains(body, "<strong>"+code+"</strong>") {
-				t.Errorf("expected the plain code %q in the e-mail", code)
+			if !strings.Contains(body, ">"+appLink+"</a>") {
+				t.Errorf("expected the link %q spelled out in the e-mail", appLink)
 			}
-			if !strings.Contains(body, `href="`+webLink+`"`) {
-				t.Errorf("expected the existing web link %q to stay in the e-mail", webLink)
+			if strings.Contains(body, "<strong>"+code+"</strong>") {
+				t.Errorf("expected no separate code %q in the e-mail", code)
+			}
+			if strings.Contains(body, webLink) {
+				t.Errorf("expected no web link %q in the e-mail", webLink)
 			}
 		})
 	}
