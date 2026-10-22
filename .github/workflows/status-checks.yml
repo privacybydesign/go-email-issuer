@@ -1,119 +1,83 @@
+# Status checks, using the shared workflows from privacybydesign/github-workflows.
+# The gate job "Status checks passed" is the one check to require.
 name: Status checks
 
 on:
   push:
     branches: [main]
   pull_request:
+  merge_group:
   schedule:
-    # Run every monday on 9:00 in the morning (UTC).
-    - cron: "0 9 * * 1"
-  # Make it possible to trigger the checks manually.
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
-  build-frontend:
-    strategy:
-      matrix:
-        lang: [en, nl]
+  frontend:
+    uses: privacybydesign/github-workflows/.github/workflows/node-checks.yml@v1
+    permissions:
+      contents: read
+    with:
+      working-directory: frontend
+      scripts: build
+      ignore-scripts: true
+
+  go:
+    uses: privacybydesign/github-workflows/.github/workflows/go-checks.yml@v1
+    permissions:
+      contents: read
+    with:
+      working-directory: backend
+      test-dockerfile: Dockerfile.test
+
+  # Builds and scans the image without pushing it; Delivery pushes from main.
+  docker:
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    uses: privacybydesign/github-workflows/.github/workflows/docker-publish.yml@v1
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+      id-token: write
+      attestations: write
+    with:
+      push-image: false
+
+  codeql:
+    uses: privacybydesign/github-workflows/.github/workflows/codeql.yml@v1
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    with:
+      languages: '["go", "javascript-typescript", "actions"]'
+      go-version-file: backend/go.mod
+      go-build-command: cd backend && go build ./...
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    uses: privacybydesign/github-workflows/.github/workflows/dependency-review.yml@v1
+    permissions:
+      contents: read
+      pull-requests: write
+
+  workflow-lint:
+    uses: privacybydesign/github-workflows/.github/workflows/workflow-lint.yml@v1
+    permissions:
+      contents: read
+
+  passed:
+    name: Status checks passed
+    if: always()
+    needs: [frontend, go, docker, codeql, dependency-review, workflow-lint]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
     steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
-
-      - name: Build
-        working-directory: frontend
-        run: npm run build
-
-  analyze-go:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: backend/go.mod
-      - name: Check fmt
-        working-directory: backend
-        run: test -z $(gofmt -l .)
-
-      - name: Check go fix
-        working-directory: backend
+      - name: All required jobs succeeded
+        env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
         run: |
-          go fix ./...
-          git diff --exit-code -- .
-
-      - name: Install GolangCI-Lint
-        run:
-          curl -sSfL
-          https://raw.githubusercontent.com/golangci/golangci-lint/v2.12.2/install.sh
-          | sh -s -- -b $(go env GOPATH)/bin v2.12.2
-
-      - name: Run linter
-        working-directory: backend
-        run: golangci-lint run --timeout 5m
-
-  test-go:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=semver,pattern={{major}}.{{minor}}.{{patch}}
-            type=raw,value=edge
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build Docker image for testing
-        run: docker build -t email-issuer-tests --file Dockerfile.test .
-
-      - name: Run tests
-        run: docker run email-issuer-tests
-
-  build-docker-image:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=semver,pattern={{major}}.{{minor}}.{{patch}}
-            type=raw,value=edge
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build container
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          push: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          echo "$RESULTS"
+          if grep -qE '"(failure|cancelled)"' <<< "$RESULTS"; then exit 1; fi
