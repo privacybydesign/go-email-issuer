@@ -35,16 +35,18 @@ func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// check whether a file exists or is a directory at the given path
 	fi, err := os.Stat(path)
-	if os.IsNotExist(err) || fi.IsDir() {
-		// file does not exist or path is a directory, serve index.html
-		http.ServeFile(w, r, filepath.Join(h.StaticPath, h.IndexPath))
+	if err != nil && !os.IsNotExist(err) {
+		// if we got an error (that wasn't that the file doesn't exist) stating the
+		// file, return a 500 internal server error and stop. This has to come
+		// before fi is used: on such an error (e.g. ENOTDIR for a path under a
+		// file) fi is nil.
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err != nil {
-		// if we got an error (that wasn't that the file doesn't exist) stating the
-		// file, return a 500 internal server error and stop
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if os.IsNotExist(err) || fi.IsDir() {
+		// file does not exist or path is a directory, serve index.html
+		http.ServeFile(w, r, filepath.Join(h.StaticPath, h.IndexPath))
 		return
 	}
 
