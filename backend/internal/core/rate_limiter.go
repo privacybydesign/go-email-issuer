@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -50,15 +51,27 @@ func (l *TotalRateLimiter) Allow(ip, email string) (allow bool, timeoutRemaining
 
 	allowEmail, timeRemainingEmail, err := l.Email.Allow(emailKey)
 	if err != nil {
+		log.Printf("rate limit: rejected request from %s, email limiter failed: %v", ip, err)
 		return false, 30 * time.Minute
 	}
 
 	allowIp, timeRemainingIp, err := l.IP.Allow(ipKey)
 	if err != nil {
+		log.Printf("rate limit: rejected request from %s, ip limiter failed: %v", ip, err)
 		return false, 30 * time.Minute
 	}
 
 	if !allowIp || !allowEmail {
+		// The email address is left out on purpose. Many "ip limit" lines for
+		// one internal address mean trusted_proxies does not cover the ingress.
+		var limits []string
+		if !allowIp {
+			limits = append(limits, "ip")
+		}
+		if !allowEmail {
+			limits = append(limits, "email")
+		}
+		log.Printf("rate limit: rejected request from %s, %s limit reached", ip, strings.Join(limits, " and "))
 		return false, maxDuration(timeRemainingIp, timeRemainingEmail)
 	}
 	return true, 0

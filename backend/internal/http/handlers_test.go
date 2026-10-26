@@ -1,10 +1,13 @@
 package httpapi
 
 import (
+	"bytes"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"backend/internal/config"
@@ -167,6 +170,34 @@ func TestSpaHandler(t *testing.T) {
 			}
 			if tc.wantBody != "" && w.Body.String() != tc.wantBody {
 				t.Errorf("body = %q, want %q", w.Body.String(), tc.wantBody)
+			}
+		})
+	}
+}
+
+func TestNewAPILogsTrustedProxies(t *testing.T) {
+	tests := []struct {
+		name    string
+		trusted []string
+		want    string
+	}{
+		{name: "empty list warns", trusted: nil, want: "warning: no usable trusted_proxies"},
+		{name: "configured list is logged", trusted: []string{"100.64.0.0/15", "127.0.0.1"}, want: "Trusting proxy headers from 100.64.0.0/15, 127.0.0.1"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			prev := log.Writer()
+			log.SetOutput(&buf)
+			t.Cleanup(func() { log.SetOutput(prev) })
+
+			cfg := &config.Config{}
+			cfg.App.TrustedProxies = tc.trusted
+			NewAPI(cfg, nil, nil, nil, nil)
+
+			if !strings.Contains(buf.String(), tc.want) {
+				t.Errorf("log = %q, want it to contain %q", buf.String(), tc.want)
 			}
 		})
 	}
