@@ -129,14 +129,16 @@
                             <p>Dear Yivi User,</p>
                             <p>
                                 Thanks for using Yivi, your privacy-friendly identity wallet!<br />
-                                You can verify your email address by entering the following code.
-
+                                Tap the button to confirm your email address in the Yivi app.
                             </p>
                         </td>
                     </tr>
                     <tr>
-                        <td class="code-container">
-                            <strong>{{.Token}}</strong>
+                        <td class="body-text">
+                            <a class="button" href="{{.AppLink}}">Open Yivi</a>
+                            <p>
+                                Reading this on a computer? The link shows the code to fill in in Yivi on your phone.
+                            </p>
                         </td>
                     </tr>
                     <tr>
@@ -144,13 +146,12 @@
                             <table width="100%">
                                 <tr>
                                     <td class="alt-link">
-                                        Alternatively, you can verify your email by using the link
-                                        below:<br />
+                                        Or open this link:<br />
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 0px 24px 0px 16px; font-size: 18px; text-align: left;">
-                                        <a href="{{.Link}}" style="color:blue;">{{.Link}}</a>
+                                        <a href="{{.AppLink}}" style="color:blue;">{{.AppLink}}</a>
                                     </td>
                                 </tr>
                             </table>
