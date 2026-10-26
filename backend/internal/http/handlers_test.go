@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -126,6 +128,48 @@ func TestClientIP(t *testing.T) {
 			}
 			if got := a.clientIP(r); got != tc.want {
 				t.Errorf("clientIP() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestSpaHandler(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "index.html"), []byte("index"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "app.js"), []byte("app"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	h := spaHandler{StaticPath: dir, IndexPath: "index.html", FileServer: http.FileServer(http.Dir(dir))}
+
+	tests := []struct {
+		name       string
+		path       string
+		wantStatus int
+		wantBody   string
+	}{
+		{name: "existing file is served", path: "/app.js", wantStatus: http.StatusOK, wantBody: "app"},
+		{name: "unknown path falls back to index", path: "/en/enroll", wantStatus: http.StatusOK, wantBody: "index"},
+		{name: "directory falls back to index", path: "/", wantStatus: http.StatusOK, wantBody: "index"},
+		{
+			// os.Stat fails with ENOTDIR here and returns a nil FileInfo, which
+			// used to panic on fi.IsDir().
+			name:       "path under a file does not panic",
+			path:       "/app.js/x",
+			wantStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, tc.path, nil))
+			if w.Code != tc.wantStatus {
+				t.Errorf("status = %d, want %d", w.Code, tc.wantStatus)
+			}
+			if tc.wantBody != "" && w.Body.String() != tc.wantBody {
+				t.Errorf("body = %q, want %q", w.Body.String(), tc.wantBody)
 			}
 		})
 	}
