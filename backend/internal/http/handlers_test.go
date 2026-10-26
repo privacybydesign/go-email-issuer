@@ -181,7 +181,7 @@ func TestNewAPILogsTrustedProxies(t *testing.T) {
 		trusted []string
 		want    string
 	}{
-		{name: "empty list warns", trusted: nil, want: "warning: trusted_proxies is empty"},
+		{name: "empty list warns", trusted: nil, want: "warning: no usable trusted_proxies"},
 		{name: "configured list is logged", trusted: []string{"100.64.0.0/15", "127.0.0.1"}, want: "Trusting proxy headers from 100.64.0.0/15, 127.0.0.1"},
 	}
 

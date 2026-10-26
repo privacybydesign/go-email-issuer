@@ -19,7 +19,7 @@ func captureLog(t *testing.T) *bytes.Buffer {
 	return &buf
 }
 
-func TestTotalRateLimiterLogsRejections(t *testing.T) {
+func TestAllowLogsRejections(t *testing.T) {
 	const ip = "203.0.113.7"
 	const email = "someone@example.com"
 

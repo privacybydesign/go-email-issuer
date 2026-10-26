@@ -62,10 +62,8 @@ func (l *TotalRateLimiter) Allow(ip, email string) (allow bool, timeoutRemaining
 	}
 
 	if !allowIp || !allowEmail {
-		// Log which limit was hit, so a rejection is visible in the logs. The
-		// email address is left out on purpose. A burst of "ip limit" lines
-		// for one internal address means every client shares that IP, e.g.
-		// because trusted_proxies does not cover the ingress.
+		// The email address is left out on purpose. Many "ip limit" lines for
+		// one internal address mean trusted_proxies does not cover the ingress.
 		var limits []string
 		if !allowIp {
 			limits = append(limits, "ip")
