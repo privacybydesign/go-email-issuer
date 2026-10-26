@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -31,6 +32,13 @@ func NewAPI(cfg *config.Config, limiter *core.TotalRateLimiter, mailer mail.Mail
 		// The config is validated at load time, so this should not happen; log
 		// and continue with proxy headers untrusted rather than crashing.
 		log.Printf("warning: ignoring trusted_proxies: %s", err)
+	}
+	if len(trustedProxies) == 0 {
+		// Behind a reverse proxy every request then appears to come from the
+		// proxy, so all clients share one IP rate limit.
+		log.Print("warning: trusted_proxies is empty, so proxy headers are ignored and the IP rate limit uses the direct peer address")
+	} else {
+		log.Printf("Trusting proxy headers from %s", strings.Join(cfg.App.TrustedProxies, ", "))
 	}
 	return &API{cfg: cfg, limiter: limiter, mailer: mailer, tokenGenerator: tokenGenerator, tokenStorage: tokenStorage, trustedProxies: trustedProxies}
 }
