@@ -329,11 +329,14 @@ func TestSendEmailStoresLinkTokenWithoutEmailInUrl(t *testing.T) {
 		require.Equal(t, http.StatusOK, res.StatusCode)
 	}
 
-	// The rendered email must carry the verification link, and that link must
-	// contain the opaque token but never the email address (issue #44).
+	// The rendered email carries one link, to the app with the code in the
+	// fragment. The web link is no longer in it; the token above still serves
+	// the links in e-mails sent before. The email address never appears in the
+	// email or its link (issue #44).
 	require.NotNil(t, freshMailer.last)
 	body := freshMailer.last.Body
-	require.Contains(t, body, "/enroll#token:", "email must contain the opaque verification link")
+	require.Contains(t, body, "https://open.yivi.app/-/email#code=", "email must contain the app link")
+	require.NotContains(t, body, "/enroll#token:", "email must not carry the web link any more")
 	require.NotContains(t, body, "#verify:", "email must not use the old email-bearing link format")
 	require.NotContains(t, body, testemail, "the email address must not appear anywhere in the email body/link")
 }
